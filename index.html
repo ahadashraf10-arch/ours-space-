@@ -114,6 +114,31 @@
     <!-- Main Content Container -->
     <main class="max-w-md mx-auto px-4 mt-6 space-y-6">
 
+        <!-- Presence & Relative Time Visit Tracker Card -->
+        <section class="glass-card rounded-3xl p-4 flex items-center justify-between text-xs">
+            <div class="flex items-center space-x-2">
+                <div class="relative flex h-3 w-3">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-cozy-accent opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-3 w-3 bg-cozy-accent"></span>
+                </div>
+                <div>
+                    <span class="text-cozy-lightText block text-[10px] font-semibold uppercase tracking-wider">His Last Visit</span>
+                    <span id="him-last-seen" class="font-bold text-cozy-dark">Just now</span>
+                </div>
+            </div>
+            <div class="h-8 w-px bg-gray-200/60"></div>
+            <div class="flex items-center space-x-2">
+                <div class="relative flex h-3 w-3">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-cozy-rose opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-3 w-3 bg-cozy-rose"></span>
+                </div>
+                <div>
+                    <span class="text-cozy-lightText block text-[10px] font-semibold uppercase tracking-wider">Her Last Visit</span>
+                    <span id="her-last-seen" class="font-bold text-cozy-dark">Not visited yet</span>
+                </div>
+            </div>
+        </section>
+
         <!-- Miss You Signal Button Card -->
         <section class="glass-card rounded-3xl p-6 text-center relative overflow-hidden">
             <div class="absolute -top-12 -right-12 w-28 h-28 bg-cozy-secondary/20 rounded-full blur-xl pointer-events-none"></div>
@@ -227,7 +252,7 @@
 
             <!-- Notes Grid Container -->
             <div id="notes-container" class="space-y-3">
-                <!-- Notes will render here dynamically -->
+                <!-- Notes render dynamically -->
             </div>
         </section>
 
@@ -271,12 +296,49 @@
             return nextSun.toISOString();
         }
 
+        function timeAgo(timestamp) {
+            if (!timestamp) return 'Not visited yet';
+            let past = new Date(parseInt(timestamp));
+            let now = new Date();
+            let diffSecs = Math.floor((now - past) / 1000);
+
+            if (diffSecs < 60) return 'Just now';
+            let diffMins = Math.floor(diffSecs / 60);
+            if (diffMins < 60) return `${diffMins} min${diffMins > 1 ? 's' : ''} ago`;
+            let diffHours = Math.floor(diffMins / 60);
+            if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+            let diffDays = Math.floor(diffHours / 24);
+            return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+        }
+
+        function recordVisit() {
+            let now = Date.now().toString();
+            if (currentRole === 'him') {
+                localStorage.setItem('himLastSeenTime', now);
+            } else {
+                localStorage.setItem('herLastSeenTime', now);
+            }
+            updateLastSeenDisplay();
+        }
+
+        function updateLastSeenDisplay() {
+            let himTime = localStorage.getItem('himLastSeenTime');
+            let herTime = localStorage.getItem('herLastSeenTime');
+
+            document.getElementById('him-last-seen').innerText = timeAgo(himTime);
+            document.getElementById('her-last-seen').innerText = timeAgo(herTime);
+        }
+
         function initApp() {
             setRole(currentRole);
+            recordVisit();
             updateCounters();
             updateMoodUI();
             renderNotes();
             startCountdown();
+
+            // Refresh relative time display every 30 seconds
+            setInterval(updateLastSeenDisplay, 30000);
         }
 
         function setRole(role) {
@@ -293,6 +355,7 @@
                 herBtn.className = "px-3 py-1.5 rounded-full font-medium transition-all duration-200 bg-cozy-primary text-white shadow-sm";
                 himBtn.className = "px-3 py-1.5 rounded-full font-medium transition-all duration-200 text-cozy-lightText hover:text-cozy-dark";
             }
+            recordVisit();
         }
 
         function sendMissYouSignal() {
@@ -345,78 +408,4 @@
                 if (diff <= 0) {
                     document.getElementById('cd-days').innerText = "00";
                     document.getElementById('cd-hours').innerText = "00";
-                    document.getElementById('cd-mins').innerText = "00";
-                    document.getElementById('cd-secs').innerText = "00";
-                    return;
-                }
-
-                let days = Math.floor(diff / (1000 * 60 * 60 * 24));
-                let hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                let mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-                let secs = Math.floor((diff % (1000 * 60)) / 1000);
-
-                document.getElementById('cd-days').innerText = days < 10 ? '0' + days : days;
-                document.getElementById('cd-hours').innerText = hours < 10 ? '0' + hours : hours;
-                document.getElementById('cd-mins').innerText = mins < 10 ? '0' + mins : mins;
-                document.getElementById('cd-secs').innerText = secs < 10 ? '0' + secs : secs;
-            }
-
-            updateTimer();
-            setInterval(updateTimer, 1000);
-        }
-
-        function editCountdown() {
-            let input = prompt("Enter next call date (YYYY-MM-DD HH:MM):", targetCallDate.slice(0,16).replace('T', ' '));
-            if (input) {
-                let parsed = new Date(input);
-                if (!isNaN(parsed.getTime())) {
-                    targetCallDate = parsed.toISOString();
-                    localStorage.setItem('targetCallDate', targetCallDate);
-                    startCountdown();
-                } else {
-                    alert("Invalid date format. Please try again.");
-                }
-            }
-        }
-
-        function openNoteModal() {
-            document.getElementById('note-modal').classList.remove('hidden');
-            document.getElementById('note-modal').classList.add('flex');
-        }
-
-        function closeNoteModal() {
-            document.getElementById('note-modal').classList.add('hidden');
-            document.getElementById('note-modal').classList.remove('flex');
-            document.getElementById('note-text').value = '';
-        }
-
-        function saveNote() {
-            let text = document.getElementById('note-text').value.trim();
-            if (!text) return;
-
-            let newNote = {
-                id: Date.now(),
-                author: currentRole === 'him' ? 'Him' : 'Her',
-                text: text,
-                date: new Date().toLocaleDateString([], { month: 'short', day: 'numeric' })
-            };
-
-            notes.unshift(newNote);
-            localStorage.setItem('relationshipNotes', JSON.stringify(notes));
-
-            renderNotes();
-            closeNoteModal();
-        }
-
-        function deleteNote(id) {
-            notes = notes.filter(n => n.id !== id);
-            localStorage.setItem('relationshipNotes', JSON.stringify(notes));
-            renderNotes();
-        }
-
-        function renderNotes() {
-            let container = document.getElementById('notes-container');
-            if (notes.length === 0) {
-                container.innerHTML = `
-                    <div class="text-center py-6 border-2 border-dashed border-gray-200 rounded-2xl">
  
