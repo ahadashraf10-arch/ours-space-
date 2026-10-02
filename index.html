@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Between Us — Our Distance Companion</title>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com"></script>
+<!-- FontAwesome Icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,600;1,400&display=swap" rel="stylesheet">
+<!-- Canvas Confetti -->
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+<script>
+tailwind.config = {
+theme: {
+extend: {
+colors: {
+cream: '#FAF7F2',
+warmBlush: '#FBE8E5',
+softSage: '#E2ECE9',
+warmRose: '#E07A5F',
+deepRose: '#9A4135',
+cozyBeige: '#F3ECE2',
+dustyPink: '#E8A598',
+charcoal: '#3D3A38'
+},
+fontFamily: {
+sans: ['Plus Jakarta Sans', 'sans-serif'],
+serif: ['Playfair Display', 'serif'],
+hand: ['Caveat', 'cursive']
+}
+}
+}
+}
+</script>
+<style>
+body {
+background-color: #FAF7F2;
+color: #3D3A38;
+font-family: 'Plus Jakarta Sans', sans-serif;
+overflow-x: hidden;
+background-image:
+radial-gradient(at 10% 10%, rgba(251, 232, 229, 0.7) 0px, transparent 50%),
+radial-gradient(at 90% 20%, rgba(226, 236, 233, 0.8) 0px, transparent 50%),
+radial-gradient(at 50% 80%, rgba(243, 236, 226, 0.9) 0px, transparent 50%),
+radial-gradient(at 80% 90%, rgba(232, 165, 152, 0.25) 0px, transparent 50%);
+background-attachment: fixed;
+}
+.glass-card {
+background: rgba(255, 255, 255, 0.65);
+backdrop-filter: blur(16px);
+-webkit-backdrop-filter: blur(16px);
+border: 1px solid rgba(255, 255, 255, 0.8);
+box-shadow: 0 10px 30px -10px rgba(224, 122, 95, 0.08), 0 4px 12px -2px rgba(61, 58, 56, 0.03);
+}
+.glass-card-hover {
+transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.glass-card-hover:hover {
+transform: translateY(-3px);
+box-shadow: 0 16px 36px -10px rgba(224, 122, 95, 0.15), 0 6px 16px -2px rgba(61, 58, 56, 0.05);
+}
+/* Ambient Bokeh Particles */
+.bokeh {
+position: fixed;
+border-radius: 50%;
+pointer-events: none;
+z-index: 0;
+animation: float 18s infinite ease-in-out;
+opacity: 0.4;
+}
+@keyframes float {
+0%, 100% { transform: translateY(0) scale(1) rotate(0deg); }
+50% { transform: translateY(-40px) scale(1.1) rotate(180deg); }
+}
+/* Flip card effect */
+.perspective-1000 { perspective: 1000px; }
+.transform-style-3d { transform-style: preserve-3d; }
+.backface-hidden { backface-visibility: hidden; }
+.rotate-y-180 { transform: rotateY(180deg); }
+/* Ping Button Pulsing Halo */
+@keyframes heartPulse {
+0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(224, 122, 95, 0.4); }
+70% { transform: scale(1.03); box-shadow: 0 0 0 22px rgba(224, 122, 95, 0); }
+100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(224, 122, 95, 0); }
+}
+.ping-pulse {
+animation: heartPulse 2.5s infinite;
+}
+/* Custom Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #E8A598; border-radius: 99px; }
+</style>
+</head>
+<body class="min-h-screen relative pb-12 selection:bg-warmBlush selection:text-deepRose">
+<!-- Ambient Bokeh Background Elements -->
+<div class="bokeh w-96 h-96 bg-warmBlush top-10 left-10 blur-3xl"></div>
+<div class="bokeh w-80 h-80 bg-softSage top-1/2 right-10 blur-3xl" style="animation-delay: -5s;"></div>
+<div class="bokeh w-72 h-72 bg-cozyBeige bottom-10 left-1/3 blur-3xl" style="animation-delay: -9s;"></div>
+<div class="max-w-4xl mx-auto px-4 sm:px-6 pt-6 relative z-10">
+<!-- Top Navigation Bar / Role Switcher -->
+<header class="glass-card rounded-2xl px-5 py-3.5 mb-8 flex flex-wrap items-center justify-between gap-4">
+<div class="flex items-center space-x-3">
+<div class="w-10 h-10 rounded-full bg-warmBlush text-warmRose flex items-center justify-center text-lg font-serif italic shadow-inner">
+&
+</div>
+<div>
+<h1 class="font-serif font-semibold text-lg text-charcoal leading-tight">Between Us</h1>
+<p class="text-xs text-slate-500 font-medium">Our Quiet Space Across The Distance</p>
+</div>
+</div>
+<!-- Role Selector (His / Her View) -->
+<div class="flex items-center bg-cozyBeige/80 p-1 rounded-xl text-xs font-semibold">
+<button id="roleHim" onclick="setRole('him')" class="px-3.5 py-1.5 rounded-lg transition-all duration-300 flex items-center space-x-1.5">
+<i class="fa-solid fa-user text-xs"></i>
+<span>His View</span>
+</button>
+<button id="roleHer" onclick="setRole('her')" class="px-3.5 py-1.5 rounded-lg transition-all duration-300 flex items-center space-x-1.5">
+<i class="fa-solid fa-heart text-xs"></i>
+<span>Her View</span>
+</button>
+</div>
+</header>
+<!-- Main Grid Layout -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-6 mb-8">
+<!-- LEFT COLUMN: Countdown & Ping Signal (7 cols) -->
+<div class="md:col-span-7 space-y-6">
+<!-- Weekly Call / Meet Countdown Banner -->
+<div class="glass-card rounded-3xl p-6 relative overflow-hidden">
+<div class="flex items-center justify-between mb-4">
+<span class="text-xs font-bold uppercase tracking-widest text-warmRose bg-warmBlush px-3 py-1 rounded-full">
+<i class="fa-solid fa-phone-volume mr-1.5 text-xs"></i> Weekly Connection
+</span>
+<button onclick="openCountdownModal()" class="text-xs text-slate-400 hover:text-warmRose transition">
+<i class="fa-solid fa-gear"></i> Adjust Time
+</button>
+</div>
+<div class="text-center py-2">
+<div id="countdownDisplay" class="grid grid-cols-4 gap-2 max-w-xs mx-auto mb-3">
+<div class="bg-white/70 rounded-2xl p-2.5 shadow-sm border border-white/80">
+<span id="cdDays" class="block font-serif text-2xl md:text-3xl font-bold text-charcoal">0</span>
+<span class="text-[10px] uppercase font-bold text-slate-400">Days</span>
+</div>
+<div class="bg-white/70 rounded-2xl p-2.5 shadow-sm border border-white/80">
+<span id="cdHours" class="block font-serif text-2xl md:text-3xl font-bold text-charcoal">0</span>
+<span class="text-[10px] uppercase font-bold text-slate-400">Hours</span>
+</div>
+<div class="bg-white/70 rounded-2xl p-2.5 shadow-sm border border-white/80">
+<span id="cdMins" class="block font-serif text-2xl md:text-3xl font-bold text-charcoal">0</span>
+<span class="text-[10px] uppercase font-bold text-slate-400">Mins</span>
+</div>
+<div class="bg-white/70 rounded-2xl p-2.5 shadow-sm border border-white/80">
+<span id="cdSecs" class="block font-serif text-2xl md:text-3xl font-bold text-warmRose">0</span>
+<span class="text-[10px] uppercase font-bold text-slate-400">Secs</span>
+</div>
+</div>
+<p id="countdownSubtitle" class="font-hand text-xl text-warmRose font-bold">
+until I get to hear your voice again... ✨
+</p>
+</div>
+</div>
+<!-- Thinking Of You Heart Ping Signal -->
+<div class="glass-card rounded-3xl p-6 sm:p-8 text-center relative overflow-hidden">
+<span class="text-xs font-bold uppercase tracking-widest text-slate-400 mb-2 block">
+Heartbeat Telemetry
+</span>
+<h2 class="font-serif text-2xl font-bold text-charcoal mb-6">Send A Love Signal</h2>
+<!-- Main Interactive Heart Button -->
+<div class="relative inline-block mb-6">
+<button id="pingButton" onclick="sendPing()" class="ping-pulse w-32 h-32 md:w-36 md:h-36 bg-gradient-to-tr from-warmRose to-dustyPink text-white rounded-full flex flex-col items-center justify-center shadow-xl hover:scale-105 active:scale-95 transition duration-300 mx-auto relative group">
+<i class="fa-solid fa-heart text-4xl md:text-5xl group-hover:scale-110 transition duration-300"></i>
+<span class="text-xs font-semibold mt-2 tracking-wide">THINKING OF YOU</span>
+</button>
+</div>
+<!-- Counters for Him & Her -->
+<div class="grid grid-cols-2 gap-4 max-w-sm mx-auto bg-white/60 p-3 rounded-2xl border border-white/80">
+<div class="text-center border-r border-slate-200/60 pr-2">
+<span class="block text-xs font-semibold text-slate-500 mb-0.5">He Thought Of Her</span>
+<span id="counterHim" class="font-serif text-2xl font-bold text-warmRose">0</span>
+<span class="text-[10px] text-slate-400 block">times this week</span>
+</div>
+<div class="text-center pl-2">
+<span class="block text-xs font-semibold text-slate-500 mb-0.5">She Thought Of Him</span>
+<span id="counterHer" class="font-serif text-2xl font-bold text-warmRose">0</span>
+<span class="text-[10px] text-slate-400 block">times this week</span>
+</div>
+</div>
+<!-- Recent Signals Activity Feed -->
+<div class="mt-6 text-left">
+<div class="flex items-center justify-between mb-3">
+<span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Signal Log</span>
+<span class="text-[10px] text-slate-400">Real-time pulses</span>
+</div>
+<div id="signalLogList" class="space-y-2 max-h-36 overflow-y-auto pr-1 text-xs">
+<!-- Dynamically Filled Signal Logs -->
+</div>
+</div>
+</div>
+</div>
+<!-- RIGHT COLUMN: Mood Status & Daily Reason (5 cols) -->
+<div class="md:col-span-5 space-y-6">
+<!-- Daily Mood Check-In -->
+<div class="glass-card rounded-3xl p-6">
+<div class="flex items-center justify-between mb-4">
+<h3 class="font-serif font-bold text-lg text-charcoal flex items-center">
+<i class="fa-solid fa-cloud-sun text-warmRose mr-2 text-sm"></i> Mood Check-In
+</h3>
+<span class="text-[11px] font-semibold text-slate-400 bg-white/80 px-2.5 py-1 rounded-full border border-slate-100">Today</span>
+</div>
+<!-- Both Partners' Current Mood Displays -->
+<div class="space-y-3 mb-5">
+<div class="bg-white/80 rounded-2xl p-3 border border-white flex items-center justify-between">
+<div class="flex items-center space-x-2.5">
+<span class="w-2.5 h-2.5 rounded-full bg-warmRose"></span>
+<span class="text-xs font-bold text-charcoal">His Mood:</span>
+</div>
+<span id="displayMoodHim" class="text-xs font-semibold text-warmRose bg-warmBlush px-3 py-1 rounded-full">
+Missing You Extra 💖
+</span>
+</div>
+<div class="bg-white/80 rounded-2xl p-3 border border-white flex items-center justify-between">
+<div class="flex items-center space-x-2.5">
+<span class="w-2.5 h-2.5 rounded-full bg-softSage"></span>
+<span class="text-xs font-bold text-charcoal">Her Mood:</span>
+</div>
+<span id="displayMoodHer" class="text-xs font-semibold text-emerald-700 bg-softSage px-3 py-1 rounded-full">
+Cozy Vibes ☕
+</span>
+</div>
+</div>
+<!-- Interactive Selector for Active User -->
+<div class="pt-2 border-t border-slate-200/50">
+<span id="moodSelectorTitle" class="text-xs font-bold text-slate-500 block mb-2">Update Your Status:</span>
+<div class="flex flex-wrap gap-1.5" id="moodChipsContainer">
+<button onclick="updateUserMood('Needs a Hug 🧸')" class="text-xs bg-white/70 hover:bg-warmBlush border border-slate-200/80 px-2.5 py-1.5 rounded-xl transition font-medium text-slate-700">Needs a Hug 🧸</button>
+<button onclick="updateUserMood('Super Busy ⚡')" class="text-xs bg-white/70 hover:bg-warmBlush border border-slate-200/80 px-2.5 py-1.5 rounded-xl transition font-medium text-slate-700">Super Busy ⚡</button>
+<button onclick="updateUserMood('Cozy Vibes ☕')" class="text-xs bg-white/70 hover:bg-warmBlush border border-slate-200/80 px-2.5 py-1.5 rounded-xl transition font-medium text-slate-700">Cozy Vibes ☕</button>
+<button onclick="updateUserMood('Missing You Extra 💖')" class="text-xs bg-white/70 hover:bg-warmBlush border border-slate-200/80 px-2.5 py-1.5 rounded-xl transition font-medium text-slate-700">Missing You 💖</button>
+<button onclick="updateUserMood('Happy & Energetic ✨')" class="text-xs bg-white/70 hover:bg-warmBlush border border-slate-200/80 px-2.5 py-1.5 rounded-xl transition font-medium text-slate-700">Happy ✨</button>
+</div>
+</div>
+</div>
+<!-- Flip Card: Reason Why I Miss You Today -->
+<div class="glass-card rounded-3xl p-6 text-center">
+<span class="text-[11px] font-bold uppercase tracking-widest text-warmRose mb-1 block">Daily Love Card</span>
+<h3 class="font-serif font-bold text-lg text-charcoal mb-4">Why I Miss You Today</h3>
+<div class="perspective-1000 w-full h-44 cursor-pointer" onclick="toggleCardFlip(this)">
+<div id="cardInner" class="transform-style-3d transition-transform duration-700 w-full h-full relative">
+<!-- Card Front -->
+<div class="backface-hidden absolute inset-0 bg-gradient-to-br from-warmBlush to-cozyBeige border border-white/80 rounded-2xl p-5 flex flex-col items-center justify-center shadow-sm">
+<i class="fa-solid fa-envelope-open-text text-3xl text-warmRose mb-2 animate-bounce"></i>
+<span class="font-serif italic text-charcoal font-semibold text-sm">Tap to flip & reveal today's reason</span>
+<span class="text-[10px] text-slate-400 mt-2">New memory unlocked</span>
+</div>
+<!-- Card Back -->
+<div class="backface-hidden rotate-y-180 absolute inset-0 bg-white border border-warmBlush rounded-2xl p-5 flex flex-col items-center justify-center shadow-md">
+<p id="dailyReasonText" class="font-hand text-2xl text-deepRose font-bold leading-tight">
+"Your laugh makes even my worst days feel instantly warm and peaceful."
+</p>
+<span class="text-[10px] text-slate-400 mt-3 font-semibold uppercase tracking-wider">Tap to close</span>
+</div>
+</div>
+</div>
+<button onclick="nextReason(event)" class="mt-4 text-xs font-semibold text-warmRose hover:underline">
+<i class="fa-solid fa-shuffle mr-1"></i> Reveal Another Memory
+</button>
+</div>
+</div>
+</div>
+<!-- SECTION 3: Virtual Jar of Little Notes (Note Wall) -->
+<section class="glass-card rounded-3xl p-6 sm:p-8 mb-8">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+<div>
+<h2 class="font-serif text-2xl font-bold text-charcoal flex items-center">
+<i class="fa-solid fa-jar text-warmRose mr-3"></i> Virtual Jar of Notes
+</h2>
+<p class="text-xs text-slate-500 mt-1">Leave quiet thoughts, inside jokes, and love notes between calls.</p>
+</div>
+<button onclick="openNewNoteModal()" class="bg-gradient-to-r from-warmRose to-dustyPink text-white font-semibold px-4 py-2.5 rounded-xl text-xs shadow-md hover:shadow-lg hover:scale-105 transition flex items-center self-start sm:self-auto">
+<i class="fa-solid fa-plus mr-2"></i> Add A Note
+</button>
+</div>
+<!-- Notes Filter Bar -->
+<div class="flex flex-wrap gap-2 mb-6 text-xs font-medium">
+<button onclick="filterNotes('all')" class="note-filter-btn bg-white text-charcoal px-3 py-1.5 rounded-xl border border-slate-200 active-filter shadow-sm">All Notes</button>
+<button onclick="filterNotes('Love Note')" class="note-filter-btn bg-white/60 text-slate-600 px-3 py-1.5 rounded-xl border border-slate-200/60 hover:bg-white">Love Notes 💌</button>
+<button onclick="filterNotes('Inside Joke')" class="note-filter-btn bg-white/60 text-slate-600 px-3 py-1.5 rounded-xl border border-slate-200/60 hover:bg-white">Inside Jokes 😂</button>
+<button onclick="filterNotes('Read When Miss Me')" class="note-filter-btn bg-white/60 text-slate-600 px-3 py-1.5 rounded-xl border border-slate-200/60 hover:bg-white">Read When Miss Me 💖</button>
+<button onclick="filterNotes('Time Capsule')" class="note-filter-btn bg-white/60 text-slate-600 px-3 py-1.5 rounded-xl border border-slate-200/60 hover:bg-white">Locked Capsule 🔒</button>
+</div>
+<!-- Notes Grid Container -->
+<div id="notesGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+<!-- Dynamically Inserted Note Cards -->
+</div>
+</section>
+<!-- Footer -->
+<footer class="text-center text-xs text-slate-400 py-4">
+<p class="font-hand text-lg text-slate-500">Made with endless love across the miles 💕</p>
+<p class="mt-1">All data stays private & saved in your browser storage.</p>
+</footer>
+</div>
+<!-- MODAL 1: Add New Note -->
+<div id="newNoteModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+<div class="glass-card bg-white/95 rounded-3xl p-6 max-w-md w-full shadow-2xl border border-white">
+<div class="flex justify-between items-center mb-4">
+<h3 class="font-serif font-bold text-lg text-charcoal">Leave a Little Note</h3>
+<button onclick="closeNewNoteModal()" class="text-slate-400 hover:text-slate-600 text-lg"><i class="fa-solid fa-xmark"></i></button>
+</div>
+<div class="space-y-4">
+<div>
+<label class="block text-xs font-bold text-slate-600 uppercase mb-1">Tag / Category</label>
+<select id="noteTagInput" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs font-medium focus:ring-2 focus:ring-warmRose outline-none">
+<option value="Love Note">Love Note 💌</option>
+<option value="Inside Joke">Inside Joke 😂</option>
+<option value="Read When Miss Me">Read When You Miss Me 💖</option>
+<option value="Random Thought">Random Thought 💭</option>
+<option value="Time Capsule">Locked Time Capsule (Opens Call Day) 🔒</option>
+</select>
+</div>
+<div>
+<label class="block text-xs font-bold text-slate-600 uppercase mb-1">Your Message</label>
+<textarea id="noteTextInput" rows="4" placeholder="Write something sweet, funny, or quiet..." class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm font-hand text-xl focus:ring-2 focus:ring-warmRose outline-none resize-none"></textarea>
+</div>
+<div class="flex items-center space-x-2">
+<input type="checkbox" id="notePinInput" class="accent-warmRose rounded">
+<label for="notePinInput" class="text-xs font-semibold text-slate-600">Pin to top of the jar 📌</label>
+</div>
+</div>
+<div class="mt-6 flex space-x-2">
+<button onclick="closeNewNoteModal()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold py-2.5 rounded-xl text-xs transition">Cancel</button>
+<button onclick="saveNewNote()" class="flex-1 bg-warmRose hover:bg-deepRose text-white font-semibold py-2.5 rounded-xl text-xs transition shadow">Drop in Jar 🍯</button>
+</div>
+</div>
+</div>
+<!-- MODAL 2: Adjust Weekly Call Timer -->
+<div id="countdownModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+<div class="glass-card bg-white/95 rounded-3xl p-6 max-w-sm w-full shadow-2xl border border-white">
+<div class="flex justify-between items-center mb-4">
+<h3 class="font-serif font-bold text-lg text-charcoal">Set Next Call Date</h3>
+<button onclick="closeCountdownModal()" class="text-slate-400 hover:text-slate-600 text-lg"><i class="fa-solid fa-xmark"></i></button>
+</div>
+<div class="space-y-4">
+<div>
+<label class="block text-xs font-bold text-slate-600 uppercase mb-1">Select Next Call Date & Time</label>
+<input type="datetime-local" id="callDatetimeInput" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs font-medium focus:ring-2 focus:ring-warmRose outline-none">
+</div>
+</div>
+<div class="mt-6 flex space-x-2">
+<button onclick="closeCountdownModal()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold py-2.5 rounded-xl text-xs transition">Cancel</button>
+<button onclick="saveCountdownTarget()" class="flex-1 bg-warmRose hover:bg-deepRose text-white font-semibold py-2.5 rounded-xl text-xs transition shadow">Save Schedule</button>
+</div>
+</div>
+</div>
+<script>
+// State Management
+let appState = {
+currentRole: 'him', // 'him' or 'her'
+counterHim: 0,
+counterHer: 0,
+moodHim: 'Missing You Extra 💖',
+moodHer: 'Cozy Vibes ☕',
+nextCallTime: new Date(Date.now() + 6 * 24 * 60 * 60 * 1000).toISOString(), // Default 6 days from now
+signals: [],
+notes: [
+{
+id: 1,
+author: 'him',
+tag: 'Love Note',
+text: 'Just heard our song on the radio and thought of your cute smile. Can’t wait for Sunday!',
+pinned: true,
+timestamp: 'Yesterday at 9:15 PM'
+},
+{
+id: 2,
+author: 'her',
+tag: 'Inside Joke',
+text: 'Remember: You still owe me 2 iced lattes for losing the trivia game last week! ☕',
+pinned: false,
+timestamp: '2 days ago'
+},
+{
+id: 3,
+author: 'him',
+tag: 'Read When Miss Me',
+text: 'Whenever you feel lonely, look up at the moon. It’s the exact same one I’m looking at right now.',
+pinned: false,
+timestamp: '3 days ago'
+}
+]
+};
+const dailyReasons = [
+"Your laugh makes even my worst days feel instantly warm and peaceful.",
+"You always know how to make me smile without even trying.",
+"I love how comfortable silence feels when I'm talking with you.",
+"You remember the smallest little details about my day.",
+"Just getting a te
