@@ -1,399 +1,422 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Between Us — Our Distance Companion</title>
-<!-- Tailwind CSS -->
-<script src="https://cdn.tailwindcss.com"></script>
-<!-- FontAwesome Icons -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<!-- Google Fonts -->
-<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,600;1,400&display=swap" rel="stylesheet">
-<!-- Canvas Confetti -->
-<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-<script>
-tailwind.config = {
-theme: {
-extend: {
-colors: {
-cream: '#FAF7F2',
-warmBlush: '#FBE8E5',
-softSage: '#E2ECE9',
-warmRose: '#E07A5F',
-deepRose: '#9A4135',
-cozyBeige: '#F3ECE2',
-dustyPink: '#E8A598',
-charcoal: '#3D3A38'
-},
-fontFamily: {
-sans: ['Plus Jakarta Sans', 'sans-serif'],
-serif: ['Playfair Display', 'serif'],
-hand: ['Caveat', 'cursive']
-}
-}
-}
-}
-</script>
-<style>
-body {
-background-color: #FAF7F2;
-color: #3D3A38;
-font-family: 'Plus Jakarta Sans', sans-serif;
-overflow-x: hidden;
-background-image:
-radial-gradient(at 10% 10%, rgba(251, 232, 229, 0.7) 0px, transparent 50%),
-radial-gradient(at 90% 20%, rgba(226, 236, 233, 0.8) 0px, transparent 50%),
-radial-gradient(at 50% 80%, rgba(243, 236, 226, 0.9) 0px, transparent 50%),
-radial-gradient(at 80% 90%, rgba(232, 165, 152, 0.25) 0px, transparent 50%);
-background-attachment: fixed;
-}
-.glass-card {
-background: rgba(255, 255, 255, 0.65);
-backdrop-filter: blur(16px);
--webkit-backdrop-filter: blur(16px);
-border: 1px solid rgba(255, 255, 255, 0.8);
-box-shadow: 0 10px 30px -10px rgba(224, 122, 95, 0.08), 0 4px 12px -2px rgba(61, 58, 56, 0.03);
-}
-.glass-card-hover {
-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-.glass-card-hover:hover {
-transform: translateY(-3px);
-box-shadow: 0 16px 36px -10px rgba(224, 122, 95, 0.15), 0 6px 16px -2px rgba(61, 58, 56, 0.05);
-}
-/* Ambient Bokeh Particles */
-.bokeh {
-position: fixed;
-border-radius: 50%;
-pointer-events: none;
-z-index: 0;
-animation: float 18s infinite ease-in-out;
-opacity: 0.4;
-}
-@keyframes float {
-0%, 100% { transform: translateY(0) scale(1) rotate(0deg); }
-50% { transform: translateY(-40px) scale(1.1) rotate(180deg); }
-}
-/* Flip card effect */
-.perspective-1000 { perspective: 1000px; }
-.transform-style-3d { transform-style: preserve-3d; }
-.backface-hidden { backface-visibility: hidden; }
-.rotate-y-180 { transform: rotateY(180deg); }
-/* Ping Button Pulsing Halo */
-@keyframes heartPulse {
-0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(224, 122, 95, 0.4); }
-70% { transform: scale(1.03); box-shadow: 0 0 0 22px rgba(224, 122, 95, 0); }
-100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(224, 122, 95, 0); }
-}
-.ping-pulse {
-animation: heartPulse 2.5s infinite;
-}
-/* Custom Scrollbar */
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #E8A598; border-radius: 99px; }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Between Us — Our Space</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Canvas Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        cozy: {
+                            bg: '#FFFBF7',
+                            card: '#FFFFFF',
+                            primary: '#E07A5F',
+                            primaryHover: '#D0694E',
+                            secondary: '#F2CC8F',
+                            accent: '#81B29A',
+                            dark: '#3D405B',
+                            lightText: '#8D918B',
+                            softPink: '#F4F1DE',
+                            rose: '#F28482'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                        hand: ['Caveat', 'cursive']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #FFFBF7;
+            background-image: 
+                radial-gradient(at 10% 10%, rgba(242, 204, 143, 0.15) 0px, transparent 50%),
+                radial-gradient(at 90% 90%, rgba(224, 122, 95, 0.12) 0px, transparent 50%),
+                radial-gradient(at 50% 50%, rgba(244, 241, 222, 0.3) 0px, transparent 50%);
+            background-attachment: fixed;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 10px 30px -5px rgba(61, 64, 91, 0.05);
+        }
+
+        .pulse-glow {
+            animation: pulse-glow-anim 2.5s infinite ease-in-out;
+        }
+
+        @keyframes pulse-glow-anim {
+            0% { box-shadow: 0 0 0 0 rgba(224, 122, 95, 0.4); }
+            70% { box-shadow: 0 0 0 20px rgba(224, 122, 95, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(224, 122, 95, 0); }
+        }
+
+        .floating {
+            animation: float 4s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-8px); }
+            100% { transform: translateY(0px); }
+        }
+
+        .sticky-note {
+            box-shadow: 3px 5px 15px rgba(0,0,0,0.04);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .sticky-note:hover {
+            transform: translateY(-3px) rotate(0deg) !important;
+            box-shadow: 5px 10px 20px rgba(0,0,0,0.08);
+        }
+    </style>
 </head>
-<body class="min-h-screen relative pb-12 selection:bg-warmBlush selection:text-deepRose">
-<!-- Ambient Bokeh Background Elements -->
-<div class="bokeh w-96 h-96 bg-warmBlush top-10 left-10 blur-3xl"></div>
-<div class="bokeh w-80 h-80 bg-softSage top-1/2 right-10 blur-3xl" style="animation-delay: -5s;"></div>
-<div class="bokeh w-72 h-72 bg-cozyBeige bottom-10 left-1/3 blur-3xl" style="animation-delay: -9s;"></div>
-<div class="max-w-4xl mx-auto px-4 sm:px-6 pt-6 relative z-10">
-<!-- Top Navigation Bar / Role Switcher -->
-<header class="glass-card rounded-2xl px-5 py-3.5 mb-8 flex flex-wrap items-center justify-between gap-4">
-<div class="flex items-center space-x-3">
-<div class="w-10 h-10 rounded-full bg-warmBlush text-warmRose flex items-center justify-center text-lg font-serif italic shadow-inner">
-&
-</div>
-<div>
-<h1 class="font-serif font-semibold text-lg text-charcoal leading-tight">Between Us</h1>
-<p class="text-xs text-slate-500 font-medium">Our Quiet Space Across The Distance</p>
-</div>
-</div>
-<!-- Role Selector (His / Her View) -->
-<div class="flex items-center bg-cozyBeige/80 p-1 rounded-xl text-xs font-semibold">
-<button id="roleHim" onclick="setRole('him')" class="px-3.5 py-1.5 rounded-lg transition-all duration-300 flex items-center space-x-1.5">
-<i class="fa-solid fa-user text-xs"></i>
-<span>His View</span>
-</button>
-<button id="roleHer" onclick="setRole('her')" class="px-3.5 py-1.5 rounded-lg transition-all duration-300 flex items-center space-x-1.5">
-<i class="fa-solid fa-heart text-xs"></i>
-<span>Her View</span>
-</button>
-</div>
-</header>
-<!-- Main Grid Layout -->
-<div class="grid grid-cols-1 md:grid-cols-12 gap-6 mb-8">
-<!-- LEFT COLUMN: Countdown & Ping Signal (7 cols) -->
-<div class="md:col-span-7 space-y-6">
-<!-- Weekly Call / Meet Countdown Banner -->
-<div class="glass-card rounded-3xl p-6 relative overflow-hidden">
-<div class="flex items-center justify-between mb-4">
-<span class="text-xs font-bold uppercase tracking-widest text-warmRose bg-warmBlush px-3 py-1 rounded-full">
-<i class="fa-solid fa-phone-volume mr-1.5 text-xs"></i> Weekly Connection
-</span>
-<button onclick="openCountdownModal()" class="text-xs text-slate-400 hover:text-warmRose transition">
-<i class="fa-solid fa-gear"></i> Adjust Time
-</button>
-</div>
-<div class="text-center py-2">
-<div id="countdownDisplay" class="grid grid-cols-4 gap-2 max-w-xs mx-auto mb-3">
-<div class="bg-white/70 rounded-2xl p-2.5 shadow-sm border border-white/80">
-<span id="cdDays" class="block font-serif text-2xl md:text-3xl font-bold text-charcoal">0</span>
-<span class="text-[10px] uppercase font-bold text-slate-400">Days</span>
-</div>
-<div class="bg-white/70 rounded-2xl p-2.5 shadow-sm border border-white/80">
-<span id="cdHours" class="block font-serif text-2xl md:text-3xl font-bold text-charcoal">0</span>
-<span class="text-[10px] uppercase font-bold text-slate-400">Hours</span>
-</div>
-<div class="bg-white/70 rounded-2xl p-2.5 shadow-sm border border-white/80">
-<span id="cdMins" class="block font-serif text-2xl md:text-3xl font-bold text-charcoal">0</span>
-<span class="text-[10px] uppercase font-bold text-slate-400">Mins</span>
-</div>
-<div class="bg-white/70 rounded-2xl p-2.5 shadow-sm border border-white/80">
-<span id="cdSecs" class="block font-serif text-2xl md:text-3xl font-bold text-warmRose">0</span>
-<span class="text-[10px] uppercase font-bold text-slate-400">Secs</span>
-</div>
-</div>
-<p id="countdownSubtitle" class="font-hand text-xl text-warmRose font-bold">
-until I get to hear your voice again... ✨
-</p>
-</div>
-</div>
-<!-- Thinking Of You Heart Ping Signal -->
-<div class="glass-card rounded-3xl p-6 sm:p-8 text-center relative overflow-hidden">
-<span class="text-xs font-bold uppercase tracking-widest text-slate-400 mb-2 block">
-Heartbeat Telemetry
-</span>
-<h2 class="font-serif text-2xl font-bold text-charcoal mb-6">Send A Love Signal</h2>
-<!-- Main Interactive Heart Button -->
-<div class="relative inline-block mb-6">
-<button id="pingButton" onclick="sendPing()" class="ping-pulse w-32 h-32 md:w-36 md:h-36 bg-gradient-to-tr from-warmRose to-dustyPink text-white rounded-full flex flex-col items-center justify-center shadow-xl hover:scale-105 active:scale-95 transition duration-300 mx-auto relative group">
-<i class="fa-solid fa-heart text-4xl md:text-5xl group-hover:scale-110 transition duration-300"></i>
-<span class="text-xs font-semibold mt-2 tracking-wide">THINKING OF YOU</span>
-</button>
-</div>
-<!-- Counters for Him & Her -->
-<div class="grid grid-cols-2 gap-4 max-w-sm mx-auto bg-white/60 p-3 rounded-2xl border border-white/80">
-<div class="text-center border-r border-slate-200/60 pr-2">
-<span class="block text-xs font-semibold text-slate-500 mb-0.5">He Thought Of Her</span>
-<span id="counterHim" class="font-serif text-2xl font-bold text-warmRose">0</span>
-<span class="text-[10px] text-slate-400 block">times this week</span>
-</div>
-<div class="text-center pl-2">
-<span class="block text-xs font-semibold text-slate-500 mb-0.5">She Thought Of Him</span>
-<span id="counterHer" class="font-serif text-2xl font-bold text-warmRose">0</span>
-<span class="text-[10px] text-slate-400 block">times this week</span>
-</div>
-</div>
-<!-- Recent Signals Activity Feed -->
-<div class="mt-6 text-left">
-<div class="flex items-center justify-between mb-3">
-<span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Signal Log</span>
-<span class="text-[10px] text-slate-400">Real-time pulses</span>
-</div>
-<div id="signalLogList" class="space-y-2 max-h-36 overflow-y-auto pr-1 text-xs">
-<!-- Dynamically Filled Signal Logs -->
-</div>
-</div>
-</div>
-</div>
-<!-- RIGHT COLUMN: Mood Status & Daily Reason (5 cols) -->
-<div class="md:col-span-5 space-y-6">
-<!-- Daily Mood Check-In -->
-<div class="glass-card rounded-3xl p-6">
-<div class="flex items-center justify-between mb-4">
-<h3 class="font-serif font-bold text-lg text-charcoal flex items-center">
-<i class="fa-solid fa-cloud-sun text-warmRose mr-2 text-sm"></i> Mood Check-In
-</h3>
-<span class="text-[11px] font-semibold text-slate-400 bg-white/80 px-2.5 py-1 rounded-full border border-slate-100">Today</span>
-</div>
-<!-- Both Partners' Current Mood Displays -->
-<div class="space-y-3 mb-5">
-<div class="bg-white/80 rounded-2xl p-3 border border-white flex items-center justify-between">
-<div class="flex items-center space-x-2.5">
-<span class="w-2.5 h-2.5 rounded-full bg-warmRose"></span>
-<span class="text-xs font-bold text-charcoal">His Mood:</span>
-</div>
-<span id="displayMoodHim" class="text-xs font-semibold text-warmRose bg-warmBlush px-3 py-1 rounded-full">
-Missing You Extra 💖
-</span>
-</div>
-<div class="bg-white/80 rounded-2xl p-3 border border-white flex items-center justify-between">
-<div class="flex items-center space-x-2.5">
-<span class="w-2.5 h-2.5 rounded-full bg-softSage"></span>
-<span class="text-xs font-bold text-charcoal">Her Mood:</span>
-</div>
-<span id="displayMoodHer" class="text-xs font-semibold text-emerald-700 bg-softSage px-3 py-1 rounded-full">
-Cozy Vibes ☕
-</span>
-</div>
-</div>
-<!-- Interactive Selector for Active User -->
-<div class="pt-2 border-t border-slate-200/50">
-<span id="moodSelectorTitle" class="text-xs font-bold text-slate-500 block mb-2">Update Your Status:</span>
-<div class="flex flex-wrap gap-1.5" id="moodChipsContainer">
-<button onclick="updateUserMood('Needs a Hug 🧸')" class="text-xs bg-white/70 hover:bg-warmBlush border border-slate-200/80 px-2.5 py-1.5 rounded-xl transition font-medium text-slate-700">Needs a Hug 🧸</button>
-<button onclick="updateUserMood('Super Busy ⚡')" class="text-xs bg-white/70 hover:bg-warmBlush border border-slate-200/80 px-2.5 py-1.5 rounded-xl transition font-medium text-slate-700">Super Busy ⚡</button>
-<button onclick="updateUserMood('Cozy Vibes ☕')" class="text-xs bg-white/70 hover:bg-warmBlush border border-slate-200/80 px-2.5 py-1.5 rounded-xl transition font-medium text-slate-700">Cozy Vibes ☕</button>
-<button onclick="updateUserMood('Missing You Extra 💖')" class="text-xs bg-white/70 hover:bg-warmBlush border border-slate-200/80 px-2.5 py-1.5 rounded-xl transition font-medium text-slate-700">Missing You 💖</button>
-<button onclick="updateUserMood('Happy & Energetic ✨')" class="text-xs bg-white/70 hover:bg-warmBlush border border-slate-200/80 px-2.5 py-1.5 rounded-xl transition font-medium text-slate-700">Happy ✨</button>
-</div>
-</div>
-</div>
-<!-- Flip Card: Reason Why I Miss You Today -->
-<div class="glass-card rounded-3xl p-6 text-center">
-<span class="text-[11px] font-bold uppercase tracking-widest text-warmRose mb-1 block">Daily Love Card</span>
-<h3 class="font-serif font-bold text-lg text-charcoal mb-4">Why I Miss You Today</h3>
-<div class="perspective-1000 w-full h-44 cursor-pointer" onclick="toggleCardFlip(this)">
-<div id="cardInner" class="transform-style-3d transition-transform duration-700 w-full h-full relative">
-<!-- Card Front -->
-<div class="backface-hidden absolute inset-0 bg-gradient-to-br from-warmBlush to-cozyBeige border border-white/80 rounded-2xl p-5 flex flex-col items-center justify-center shadow-sm">
-<i class="fa-solid fa-envelope-open-text text-3xl text-warmRose mb-2 animate-bounce"></i>
-<span class="font-serif italic text-charcoal font-semibold text-sm">Tap to flip & reveal today's reason</span>
-<span class="text-[10px] text-slate-400 mt-2">New memory unlocked</span>
-</div>
-<!-- Card Back -->
-<div class="backface-hidden rotate-y-180 absolute inset-0 bg-white border border-warmBlush rounded-2xl p-5 flex flex-col items-center justify-center shadow-md">
-<p id="dailyReasonText" class="font-hand text-2xl text-deepRose font-bold leading-tight">
-"Your laugh makes even my worst days feel instantly warm and peaceful."
-</p>
-<span class="text-[10px] text-slate-400 mt-3 font-semibold uppercase tracking-wider">Tap to close</span>
-</div>
-</div>
-</div>
-<button onclick="nextReason(event)" class="mt-4 text-xs font-semibold text-warmRose hover:underline">
-<i class="fa-solid fa-shuffle mr-1"></i> Reveal Another Memory
-</button>
-</div>
-</div>
-</div>
-<!-- SECTION 3: Virtual Jar of Little Notes (Note Wall) -->
-<section class="glass-card rounded-3xl p-6 sm:p-8 mb-8">
-<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-<div>
-<h2 class="font-serif text-2xl font-bold text-charcoal flex items-center">
-<i class="fa-solid fa-jar text-warmRose mr-3"></i> Virtual Jar of Notes
-</h2>
-<p class="text-xs text-slate-500 mt-1">Leave quiet thoughts, inside jokes, and love notes between calls.</p>
-</div>
-<button onclick="openNewNoteModal()" class="bg-gradient-to-r from-warmRose to-dustyPink text-white font-semibold px-4 py-2.5 rounded-xl text-xs shadow-md hover:shadow-lg hover:scale-105 transition flex items-center self-start sm:self-auto">
-<i class="fa-solid fa-plus mr-2"></i> Add A Note
-</button>
-</div>
-<!-- Notes Filter Bar -->
-<div class="flex flex-wrap gap-2 mb-6 text-xs font-medium">
-<button onclick="filterNotes('all')" class="note-filter-btn bg-white text-charcoal px-3 py-1.5 rounded-xl border border-slate-200 active-filter shadow-sm">All Notes</button>
-<button onclick="filterNotes('Love Note')" class="note-filter-btn bg-white/60 text-slate-600 px-3 py-1.5 rounded-xl border border-slate-200/60 hover:bg-white">Love Notes 💌</button>
-<button onclick="filterNotes('Inside Joke')" class="note-filter-btn bg-white/60 text-slate-600 px-3 py-1.5 rounded-xl border border-slate-200/60 hover:bg-white">Inside Jokes 😂</button>
-<button onclick="filterNotes('Read When Miss Me')" class="note-filter-btn bg-white/60 text-slate-600 px-3 py-1.5 rounded-xl border border-slate-200/60 hover:bg-white">Read When Miss Me 💖</button>
-<button onclick="filterNotes('Time Capsule')" class="note-filter-btn bg-white/60 text-slate-600 px-3 py-1.5 rounded-xl border border-slate-200/60 hover:bg-white">Locked Capsule 🔒</button>
-</div>
-<!-- Notes Grid Container -->
-<div id="notesGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-<!-- Dynamically Inserted Note Cards -->
-</div>
-</section>
-<!-- Footer -->
-<footer class="text-center text-xs text-slate-400 py-4">
-<p class="font-hand text-lg text-slate-500">Made with endless love across the miles 💕</p>
-<p class="mt-1">All data stays private & saved in your browser storage.</p>
-</footer>
-</div>
-<!-- MODAL 1: Add New Note -->
-<div id="newNoteModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
-<div class="glass-card bg-white/95 rounded-3xl p-6 max-w-md w-full shadow-2xl border border-white">
-<div class="flex justify-between items-center mb-4">
-<h3 class="font-serif font-bold text-lg text-charcoal">Leave a Little Note</h3>
-<button onclick="closeNewNoteModal()" class="text-slate-400 hover:text-slate-600 text-lg"><i class="fa-solid fa-xmark"></i></button>
-</div>
-<div class="space-y-4">
-<div>
-<label class="block text-xs font-bold text-slate-600 uppercase mb-1">Tag / Category</label>
-<select id="noteTagInput" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs font-medium focus:ring-2 focus:ring-warmRose outline-none">
-<option value="Love Note">Love Note 💌</option>
-<option value="Inside Joke">Inside Joke 😂</option>
-<option value="Read When Miss Me">Read When You Miss Me 💖</option>
-<option value="Random Thought">Random Thought 💭</option>
-<option value="Time Capsule">Locked Time Capsule (Opens Call Day) 🔒</option>
-</select>
-</div>
-<div>
-<label class="block text-xs font-bold text-slate-600 uppercase mb-1">Your Message</label>
-<textarea id="noteTextInput" rows="4" placeholder="Write something sweet, funny, or quiet..." class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm font-hand text-xl focus:ring-2 focus:ring-warmRose outline-none resize-none"></textarea>
-</div>
-<div class="flex items-center space-x-2">
-<input type="checkbox" id="notePinInput" class="accent-warmRose rounded">
-<label for="notePinInput" class="text-xs font-semibold text-slate-600">Pin to top of the jar 📌</label>
-</div>
-</div>
-<div class="mt-6 flex space-x-2">
-<button onclick="closeNewNoteModal()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold py-2.5 rounded-xl text-xs transition">Cancel</button>
-<button onclick="saveNewNote()" class="flex-1 bg-warmRose hover:bg-deepRose text-white font-semibold py-2.5 rounded-xl text-xs transition shadow">Drop in Jar 🍯</button>
-</div>
-</div>
-</div>
-<!-- MODAL 2: Adjust Weekly Call Timer -->
-<div id="countdownModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
-<div class="glass-card bg-white/95 rounded-3xl p-6 max-w-sm w-full shadow-2xl border border-white">
-<div class="flex justify-between items-center mb-4">
-<h3 class="font-serif font-bold text-lg text-charcoal">Set Next Call Date</h3>
-<button onclick="closeCountdownModal()" class="text-slate-400 hover:text-slate-600 text-lg"><i class="fa-solid fa-xmark"></i></button>
-</div>
-<div class="space-y-4">
-<div>
-<label class="block text-xs font-bold text-slate-600 uppercase mb-1">Select Next Call Date & Time</label>
-<input type="datetime-local" id="callDatetimeInput" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs font-medium focus:ring-2 focus:ring-warmRose outline-none">
-</div>
-</div>
-<div class="mt-6 flex space-x-2">
-<button onclick="closeCountdownModal()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold py-2.5 rounded-xl text-xs transition">Cancel</button>
-<button onclick="saveCountdownTarget()" class="flex-1 bg-warmRose hover:bg-deepRose text-white font-semibold py-2.5 rounded-xl text-xs transition shadow">Save Schedule</button>
-</div>
-</div>
-</div>
-<script>
-// State Management
-let appState = {
-currentRole: 'him', // 'him' or 'her'
-counterHim: 0,
-counterHer: 0,
-moodHim: 'Missing You Extra 💖',
-moodHer: 'Cozy Vibes ☕',
-nextCallTime: new Date(Date.now() + 6 * 24 * 60 * 60 * 1000).toISOString(), // Default 6 days from now
-signals: [],
-notes: [
-{
-id: 1,
-author: 'him',
-tag: 'Love Note',
-text: 'Just heard our song on the radio and thought of your cute smile. Can’t wait for Sunday!',
-pinned: true,
-timestamp: 'Yesterday at 9:15 PM'
-},
-{
-id: 2,
-author: 'her',
-tag: 'Inside Joke',
-text: 'Remember: You still owe me 2 iced lattes for losing the trivia game last week! ☕',
-pinned: false,
-timestamp: '2 days ago'
-},
-{
-id: 3,
-author: 'him',
-tag: 'Read When Miss Me',
-text: 'Whenever you feel lonely, look up at the moon. It’s the exact same one I’m looking at right now.',
-pinned: false,
-timestamp: '3 days ago'
-}
-]
-};
-const dailyReasons = [
-"Your laugh makes even my worst days feel instantly warm and peaceful.",
-"You always know how to make me smile without even trying.",
-"I love how comfortable silence feels when I'm talking with you.",
-"You remember the smallest little details about my day.",
-"Just getting a te
+<body class="text-cozy-dark antialiased min-h-screen pb-16">
+
+    <!-- Header / Switcher -->
+    <header class="max-w-md mx-auto pt-6 px-4 flex justify-between items-center">
+        <div class="flex items-center space-x-2">
+            <div class="w-8 h-8 rounded-full bg-cozy-primary/10 flex items-center justify-center text-cozy-primary">
+                <i data-lucide="heart" class="w-4 h-4 fill-current"></i>
+            </div>
+            <span class="font-semibold text-lg tracking-tight">Between Us</span>
+        </div>
+
+        <!-- Role Toggle Switch -->
+        <div class="glass-card p-1 rounded-full flex items-center space-x-1 border text-xs">
+            <button id="role-him" onclick="setRole('him')" class="px-3 py-1.5 rounded-full font-medium transition-all duration-200">
+                Him
+            </button>
+            <button id="role-her" onclick="setRole('her')" class="px-3 py-1.5 rounded-full font-medium transition-all duration-200">
+                Her
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="max-w-md mx-auto px-4 mt-6 space-y-6">
+
+        <!-- Miss You Signal Button Card -->
+        <section class="glass-card rounded-3xl p-6 text-center relative overflow-hidden">
+            <div class="absolute -top-12 -right-12 w-28 h-28 bg-cozy-secondary/20 rounded-full blur-xl pointer-events-none"></div>
+
+            <p class="text-xs font-semibold text-cozy-primary uppercase tracking-widest mb-1">Live Thought Signal</p>
+            <h1 class="text-2xl font-bold mb-4" id="signal-title">Thinking of You</h1>
+
+            <!-- Big Heart Button -->
+            <div class="relative my-6 inline-block">
+                <button id="miss-you-btn" onclick="sendMissYouSignal()" class="w-28 h-28 rounded-full bg-gradient-to-tr from-cozy-primary to-cozy-rose text-white flex flex-col items-center justify-center mx-auto shadow-lg shadow-cozy-primary/30 pulse-glow transform active:scale-95 transition-transform">
+                    <i data-lucide="heart" class="w-10 h-10 fill-current mb-1 floating"></i>
+                    <span class="text-xs font-bold tracking-wide">MISS YOU</span>
+                </button>
+            </div>
+
+            <!-- Missing You Stats (Weekly + All-Time Total) -->
+            <div class="grid grid-cols-2 gap-3 mt-4 pt-4 border-t border-gray-100">
+                <div class="bg-cozy-bg/80 rounded-2xl p-3 border border-gray-100/60">
+                    <span class="text-[10px] text-cozy-lightText font-medium block uppercase tracking-wider">This Week</span>
+                    <span id="him-count" class="text-lg font-bold text-cozy-primary">0</span>
+                    <span class="text-xs text-cozy-lightText block">times sent</span>
+                </div>
+                <div class="bg-cozy-bg/80 rounded-2xl p-3 border border-gray-100/60">
+                    <span class="text-[10px] text-cozy-lightText font-medium block uppercase tracking-wider">All-Time Total</span>
+                    <span id="total-count" class="text-lg font-bold text-cozy-dark">0</span>
+                    <span class="text-xs text-cozy-lightText block">times missed</span>
+                </div>
+            </div>
+
+            <p id="last-ping-time" class="text-[11px] text-cozy-lightText mt-3 italic">
+                No signal sent yet today.
+            </p>
+        </section>
+
+        <!-- Call / Date Countdown Card -->
+        <section class="glass-card rounded-3xl p-6">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center space-x-2">
+                    <i data-lucide="phone-call" class="w-4 h-4 text-cozy-accent"></i>
+                    <h2 class="text-sm font-bold tracking-tight">Our Next Talk</h2>
+                </div>
+                <button onclick="editCountdown()" class="text-xs text-cozy-lightText hover:text-cozy-dark flex items-center space-x-1">
+                    <i data-lucide="settings-2" class="w-3.5 h-3.5"></i>
+                    <span>Set Time</span>
+                </button>
+            </div>
+
+            <div class="grid grid-cols-4 gap-2 text-center" id="countdown-timer">
+                <div class="bg-cozy-softPink/60 rounded-2xl p-2.5">
+                    <span id="cd-days" class="text-xl font-bold text-cozy-dark block">00</span>
+                    <span class="text-[10px] text-cozy-lightText font-medium uppercase">Days</span>
+                </div>
+                <div class="bg-cozy-softPink/60 rounded-2xl p-2.5">
+                    <span id="cd-hours" class="text-xl font-bold text-cozy-dark block">00</span>
+                    <span class="text-[10px] text-cozy-lightText font-medium uppercase">Hours</span>
+                </div>
+                <div class="bg-cozy-softPink/60 rounded-2xl p-2.5">
+                    <span id="cd-mins" class="text-xl font-bold text-cozy-dark block">00</span>
+                    <span class="text-[10px] text-cozy-lightText font-medium uppercase">Mins</span>
+                </div>
+                <div class="bg-cozy-softPink/60 rounded-2xl p-2.5">
+                    <span id="cd-secs" class="text-xl font-bold text-cozy-dark block">00</span>
+                    <span class="text-[10px] text-cozy-lightText font-medium uppercase">Secs</span>
+                </div>
+            </div>
+            <p id="countdown-label" class="text-center text-xs text-cozy-lightText mt-3">Counting down to our weekly catch-up!</p>
+        </section>
+
+        <!-- Mood Tracker Section -->
+        <section class="glass-card rounded-3xl p-6">
+            <h2 class="text-sm font-bold tracking-tight mb-3 flex items-center space-x-2">
+                <i data-lucide="smile" class="w-4 h-4 text-cozy-secondary"></i>
+                <span>How are you feeling today?</span>
+            </h2>
+            <div class="grid grid-cols-4 gap-2">
+                <button onclick="setMood('Happy ☀️')" class="mood-btn p-3 rounded-2xl bg-cozy-bg hover:bg-cozy-secondary/20 text-center transition border border-gray-100 flex flex-col items-center">
+                    <span class="text-xl">☀️</span>
+                    <span class="text-[10px] font-semibold mt-1">Happy</span>
+                </button>
+                <button onclick="setMood('Tired 😴')" class="mood-btn p-3 rounded-2xl bg-cozy-bg hover:bg-cozy-secondary/20 text-center transition border border-gray-100 flex flex-col items-center">
+                    <span class="text-xl">😴</span>
+                    <span class="text-[10px] font-semibold mt-1">Tired</span>
+                </button>
+                <button onclick="setMood('Busy 📚')" class="mood-btn p-3 rounded-2xl bg-cozy-bg hover:bg-cozy-secondary/20 text-center transition border border-gray-100 flex flex-col items-center">
+                    <span class="text-xl">📚</span>
+                    <span class="text-[10px] font-semibold mt-1">Busy</span>
+                </button>
+                <button onclick="setMood('Need Hug 🤗')" class="mood-btn p-3 rounded-2xl bg-cozy-bg hover:bg-cozy-secondary/20 text-center transition border border-gray-100 flex flex-col items-center">
+                    <span class="text-xl">🤗</span>
+                    <span class="text-[10px] font-semibold mt-1">Need Hug</span>
+                </button>
+            </div>
+            <div id="current-mood-box" class="mt-4 p-3 rounded-2xl bg-cozy-softPink/40 text-xs text-cozy-dark flex items-center justify-between">
+                <span>Current Status:</span>
+                <span id="current-mood-text" class="font-bold">Not set yet</span>
+            </div>
+        </section>
+
+        <!-- Virtual Note Jar -->
+        <section class="glass-card rounded-3xl p-6">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center space-x-2">
+                    <i data-lucide="sticky-note" class="w-4 h-4 text-cozy-primary"></i>
+                    <h2 class="text-sm font-bold tracking-tight">Our Virtual Note Jar</h2>
+                </div>
+                <button onclick="openNoteModal()" class="px-3 py-1.5 rounded-full bg-cozy-primary text-white text-xs font-semibold flex items-center space-x-1 shadow-sm hover:bg-cozy-primaryHover transition">
+                    <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                    <span>Leave Note</span>
+                </button>
+            </div>
+
+            <!-- Notes Grid Container -->
+            <div id="notes-container" class="space-y-3">
+                <!-- Notes will render here dynamically -->
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Modal for Adding Note -->
+    <div id="note-modal" class="fixed inset-0 bg-black/40 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-3xl p-6 w-full max-w-sm shadow-xl space-y-4">
+            <div class="flex justify-between items-center">
+                <h3 class="font-bold text-base">Write a Little Note</h3>
+                <button onclick="closeNoteModal()" class="text-gray-400 hover:text-gray-600">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <textarea id="note-text" rows="4" placeholder="Write something sweet, an inside joke, or a thought..." class="w-full rounded-2xl p-3 bg-cozy-bg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-cozy-primary/50 resize-none"></textarea>
+            <div class="flex space-x-2">
+                <button onclick="saveNote()" class="w-full py-3 bg-cozy-primary text-white rounded-2xl font-semibold text-sm shadow-md hover:bg-cozy-primaryHover transition">
+                    Pin to Board
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script Logic -->
+    <script>
+        lucide.createIcons();
+
+        // State Management
+        let currentRole = localStorage.getItem('userRole') || 'him';
+        let himCount = parseInt(localStorage.getItem('himCount') || '0');
+        let totalCount = parseInt(localStorage.getItem('totalCount') || '0');
+        let currentMood = localStorage.getItem('currentMood') || 'Not set yet';
+        let targetCallDate = localStorage.getItem('targetCallDate') || getNextSunday();
+        let notes = JSON.parse(localStorage.getItem('relationshipNotes') || '[]');
+
+        function getNextSunday() {
+            let now = new Date();
+            let nextSun = new Date();
+            nextSun.setDate(now.getDate() + (7 - now.getDay()) % 7);
+            nextSun.setHours(20, 0, 0, 0);
+            return nextSun.toISOString();
+        }
+
+        function initApp() {
+            setRole(currentRole);
+            updateCounters();
+            updateMoodUI();
+            renderNotes();
+            startCountdown();
+        }
+
+        function setRole(role) {
+            currentRole = role;
+            localStorage.setItem('userRole', role);
+
+            const himBtn = document.getElementById('role-him');
+            const herBtn = document.getElementById('role-her');
+
+            if (role === 'him') {
+                himBtn.className = "px-3 py-1.5 rounded-full font-medium transition-all duration-200 bg-cozy-primary text-white shadow-sm";
+                herBtn.className = "px-3 py-1.5 rounded-full font-medium transition-all duration-200 text-cozy-lightText hover:text-cozy-dark";
+            } else {
+                herBtn.className = "px-3 py-1.5 rounded-full font-medium transition-all duration-200 bg-cozy-primary text-white shadow-sm";
+                himBtn.className = "px-3 py-1.5 rounded-full font-medium transition-all duration-200 text-cozy-lightText hover:text-cozy-dark";
+            }
+        }
+
+        function sendMissYouSignal() {
+            himCount++;
+            totalCount++;
+
+            localStorage.setItem('himCount', himCount.toString());
+            localStorage.setItem('totalCount', totalCount.toString());
+
+            let now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            localStorage.setItem('lastPingTime', now);
+
+            updateCounters();
+
+            // Trigger Heart Confetti
+            confetti({
+                particleCount: 25,
+                spread: 60,
+                origin: { y: 0.6 },
+                colors: ['#E07A5F', '#F28482', '#F2CC8F']
+            });
+        }
+
+        function updateCounters() {
+            document.getElementById('him-count').innerText = himCount;
+            document.getElementById('total-count').innerText = totalCount;
+            
+            let lastPing = localStorage.getItem('lastPingTime');
+            if (lastPing) {
+                document.getElementById('last-ping-time').innerText = `Last ping sent today at ${lastPing}`;
+            }
+        }
+
+        function setMood(mood) {
+            currentMood = mood;
+            localStorage.setItem('currentMood', mood);
+            updateMoodUI();
+        }
+
+        function updateMoodUI() {
+            document.getElementById('current-mood-text').innerText = currentMood;
+        }
+
+        function startCountdown() {
+            function updateTimer() {
+                let now = new Date().getTime();
+                let target = new Date(targetCallDate).getTime();
+                let diff = target - now;
+
+                if (diff <= 0) {
+                    document.getElementById('cd-days').innerText = "00";
+                    document.getElementById('cd-hours').innerText = "00";
+                    document.getElementById('cd-mins').innerText = "00";
+                    document.getElementById('cd-secs').innerText = "00";
+                    return;
+                }
+
+                let days = Math.floor(diff / (1000 * 60 * 60 * 24));
+                let hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                let mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                let secs = Math.floor((diff % (1000 * 60)) / 1000);
+
+                document.getElementById('cd-days').innerText = days < 10 ? '0' + days : days;
+                document.getElementById('cd-hours').innerText = hours < 10 ? '0' + hours : hours;
+                document.getElementById('cd-mins').innerText = mins < 10 ? '0' + mins : mins;
+                document.getElementById('cd-secs').innerText = secs < 10 ? '0' + secs : secs;
+            }
+
+            updateTimer();
+            setInterval(updateTimer, 1000);
+        }
+
+        function editCountdown() {
+            let input = prompt("Enter next call date (YYYY-MM-DD HH:MM):", targetCallDate.slice(0,16).replace('T', ' '));
+            if (input) {
+                let parsed = new Date(input);
+                if (!isNaN(parsed.getTime())) {
+                    targetCallDate = parsed.toISOString();
+                    localStorage.setItem('targetCallDate', targetCallDate);
+                    startCountdown();
+                } else {
+                    alert("Invalid date format. Please try again.");
+                }
+            }
+        }
+
+        function openNoteModal() {
+            document.getElementById('note-modal').classList.remove('hidden');
+            document.getElementById('note-modal').classList.add('flex');
+        }
+
+        function closeNoteModal() {
+            document.getElementById('note-modal').classList.add('hidden');
+            document.getElementById('note-modal').classList.remove('flex');
+            document.getElementById('note-text').value = '';
+        }
+
+        function saveNote() {
+            let text = document.getElementById('note-text').value.trim();
+            if (!text) return;
+
+            let newNote = {
+                id: Date.now(),
+                author: currentRole === 'him' ? 'Him' : 'Her',
+                text: text,
+                date: new Date().toLocaleDateString([], { month: 'short', day: 'numeric' })
+            };
+
+            notes.unshift(newNote);
+            localStorage.setItem('relationshipNotes', JSON.stringify(notes));
+
+            renderNotes();
+            closeNoteModal();
+        }
+
+        function deleteNote(id) {
+            notes = notes.filter(n => n.id !== id);
+            localStorage.setItem('relationshipNotes', JSON.stringify(notes));
+            renderNotes();
+        }
+
+        function renderNotes() {
+            let container = document.getElementById('notes-container');
+            if (notes.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-6 border-2 border-dashed border-gray-200 rounded-2xl">
+ 
