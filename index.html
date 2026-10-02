@@ -10,8 +10,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
     <!-- Canvas Confetti -->
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <script>
@@ -95,7 +93,7 @@
     <header class="max-w-md mx-auto pt-6 px-4 flex justify-between items-center">
         <div class="flex items-center space-x-2">
             <div class="w-8 h-8 rounded-full bg-cozy-primary/10 flex items-center justify-center text-cozy-primary">
-                <i data-lucide="heart" class="w-4 h-4 fill-current"></i>
+                <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
             </div>
             <span class="font-semibold text-lg tracking-tight">Between Us</span>
         </div>
@@ -148,8 +146,8 @@
 
             <!-- Big Heart Button -->
             <div class="relative my-6 inline-block">
-                <button id="miss-you-btn" onclick="sendMissYouSignal()" class="w-28 h-28 rounded-full bg-gradient-to-tr from-cozy-primary to-cozy-rose text-white flex flex-col items-center justify-center mx-auto shadow-lg shadow-cozy-primary/30 pulse-glow transform active:scale-95 transition-transform">
-                    <i data-lucide="heart" class="w-10 h-10 fill-current mb-1 floating"></i>
+                <button id="miss-you-btn" type="button" onclick="sendMissYouSignal()" class="w-28 h-28 rounded-full bg-gradient-to-tr from-cozy-primary to-cozy-rose text-white flex flex-col items-center justify-center mx-auto shadow-lg shadow-cozy-primary/30 pulse-glow transform active:scale-95 transition-transform cursor-pointer select-none">
+                    <svg class="w-10 h-10 fill-current mb-1 floating" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
                     <span class="text-xs font-bold tracking-wide">MISS YOU</span>
                 </button>
             </div>
@@ -177,12 +175,11 @@
         <section class="glass-card rounded-3xl p-6">
             <div class="flex items-center justify-between mb-4">
                 <div class="flex items-center space-x-2">
-                    <i data-lucide="phone-call" class="w-4 h-4 text-cozy-accent"></i>
+                    <span class="text-cozy-accent font-bold">📞</span>
                     <h2 class="text-sm font-bold tracking-tight">Our Next Talk</h2>
                 </div>
                 <button onclick="editCountdown()" class="text-xs text-cozy-lightText hover:text-cozy-dark flex items-center space-x-1">
-                    <i data-lucide="settings-2" class="w-3.5 h-3.5"></i>
-                    <span>Set Time</span>
+                    <span>⚙️ Set Time</span>
                 </button>
             </div>
 
@@ -210,7 +207,7 @@
         <!-- Mood Tracker Section -->
         <section class="glass-card rounded-3xl p-6">
             <h2 class="text-sm font-bold tracking-tight mb-3 flex items-center space-x-2">
-                <i data-lucide="smile" class="w-4 h-4 text-cozy-secondary"></i>
+                <span>😊</span>
                 <span>How are you feeling today?</span>
             </h2>
             <div class="grid grid-cols-4 gap-2">
@@ -241,12 +238,11 @@
         <section class="glass-card rounded-3xl p-6">
             <div class="flex items-center justify-between mb-4">
                 <div class="flex items-center space-x-2">
-                    <i data-lucide="sticky-note" class="w-4 h-4 text-cozy-primary"></i>
+                    <span>📝</span>
                     <h2 class="text-sm font-bold tracking-tight">Our Virtual Note Jar</h2>
                 </div>
                 <button onclick="openNoteModal()" class="px-3 py-1.5 rounded-full bg-cozy-primary text-white text-xs font-semibold flex items-center space-x-1 shadow-sm hover:bg-cozy-primaryHover transition">
-                    <i data-lucide="plus" class="w-3.5 h-3.5"></i>
-                    <span>Leave Note</span>
+                    <span>+ Leave Note</span>
                 </button>
             </div>
 
@@ -263,8 +259,8 @@
         <div class="bg-white rounded-3xl p-6 w-full max-w-sm shadow-xl space-y-4">
             <div class="flex justify-between items-center">
                 <h3 class="font-bold text-base">Write a Little Note</h3>
-                <button onclick="closeNoteModal()" class="text-gray-400 hover:text-gray-600">
-                    <i data-lucide="x" class="w-5 h-5"></i>
+                <button onclick="closeNoteModal()" class="text-gray-400 hover:text-gray-600 font-bold text-lg">
+                    ✕
                 </button>
             </div>
             <textarea id="note-text" rows="4" placeholder="Write something sweet, an inside joke, or a thought..." class="w-full rounded-2xl p-3 bg-cozy-bg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-cozy-primary/50 resize-none"></textarea>
@@ -278,8 +274,6 @@
 
     <!-- Script Logic -->
     <script>
-        lucide.createIcons();
-
         // State Management
         let currentRole = localStorage.getItem('userRole') || 'him';
         let himCount = parseInt(localStorage.getItem('himCount') || '0');
@@ -337,7 +331,6 @@
             renderNotes();
             startCountdown();
 
-            // Refresh relative time display every 30 seconds
             setInterval(updateLastSeenDisplay, 30000);
         }
 
@@ -370,13 +363,14 @@
 
             updateCounters();
 
-            // Trigger Heart Confetti
-            confetti({
-                particleCount: 25,
-                spread: 60,
-                origin: { y: 0.6 },
-                colors: ['#E07A5F', '#F28482', '#F2CC8F']
-            });
+            if (typeof confetti === 'function') {
+                confetti({
+                    particleCount: 25,
+                    spread: 60,
+                    origin: { y: 0.6 },
+                    colors: ['#E07A5F', '#F28482', '#F2CC8F']
+                });
+            }
         }
 
         function updateCounters() {
@@ -407,5 +401,4 @@
 
                 if (diff <= 0) {
                     document.getElementById('cd-days').innerText = "00";
-                    document.getElementById('cd-hours').innerText = "00";
- 
+                    document.getElementById('cd-hours
