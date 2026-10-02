@@ -93,8 +93,17 @@ button,input,textarea{font:inherit}button{cursor:pointer}.glass{background:var(-
 
 <script>
 const firebaseConfig={databaseURL:'https://between-us-8fb06-default-rtdb.firebaseio.com/'};
-let db=null, ref=null;
-try{firebase.initializeApp(firebaseConfig);db=firebase.database();ref=db.ref('space_data');}catch(e){console.warn(e)}
+let db=null, ref=null, firebaseReady=false;
+try{
+  if(!window.firebase) throw new Error('Firebase SDK did not load. Check your internet connection or hosting CSP.');
+  firebase.initializeApp(firebaseConfig);
+  db=firebase.database();
+  ref=db.ref('space_data');
+  firebaseReady=true;
+}catch(e){
+  console.error('Firebase initialization failed:',e);
+}
+
 const KEY='betweenUs_v2';
 const state=Object.assign({
   him:{mood:null,moodAt:null,heartbeat:0},her:{mood:null,moodAt:null,heartbeat:0},
@@ -103,8 +112,19 @@ const state=Object.assign({
 let role=localStorage.getItem('userRole')||'him', countdownTimer=null;
 const esc=s=>String(s??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
 const save=()=>localStorage.setItem(KEY,JSON.stringify(state));
-function remoteUpdate(patch){save();if(ref)ref.update(patch).catch(()=>setLive(false))}
-function setLive(ok){const b=document.getElementById('liveBadge');b.textContent=ok?'Live Connected':'Local Mode';b.className='text-xs px-3 py-1.5 rounded-full '+(ok?'bg-emerald-400/10 text-emerald-300':'bg-white/5 text-gray-300')}
+function remoteUpdate(patch){
+  save();
+  if(!ref || !firebaseReady) return;
+  ref.update(patch).then(()=>setLive(true)).catch(e=>{
+    console.error('Firebase write failed:',e);
+    setLive(false,'Firebase write denied');
+  });
+}
+function setLive(ok,label){
+  const b=document.getElementById('liveBadge');
+  b.textContent=label || (ok?'Live Connected':'Local Mode');
+  b.className='text-xs px-3 py-1.5 rounded-full '+(ok?'bg-emerald-400/10 text-emerald-300':'bg-white/5 text-gray-300');
+}
 function now(){return Date.now()}
 function fmtAge(ts){if(!ts)return 'Not seen yet';let s=Math.max(0,Math.floor((now()-ts)/1000));if(s<35)return 'Online now';if(s<60)return 'Last seen just now';if(s<3600)return `Last seen ${Math.floor(s/60)}m ago`;if(s<86400)return `Last seen ${Math.floor(s/3600)}h ago`;return `Last seen ${Math.floor(s/86400)}d ago`}
 function renderPresence(){['him','her'].forEach(r=>{const online=state[r].heartbeat&&now()-state[r].heartbeat<35000;document.getElementById(r+'Presence').textContent=fmtAge(state[r].heartbeat);document.getElementById(r+'Dot').textContent=online?'●':'○';document.getElementById(r+'Dot').className=online?'text-emerald-300':'text-gray-600'});const both=['him','her'].every(r=>state[r].heartbeat&&now()-state[r].heartbeat<35000);document.getElementById('entangled').classList.toggle('hidden',!both)});
@@ -112,7 +132,18 @@ function heartbeat(){state[role].heartbeat=now();remoteUpdate({[role+'/heartbeat
 function toggleRole(){role=role==='him'?'her':'him';localStorage.setItem('userRole',role);document.getElementById('roleText').textContent=role==='him'?'Him':'Her';heartbeat();renderMoods()}
 function setMood(mood){state[role].mood=mood;state[role].moodAt=now();remoteUpdate({[role+'/mood']:mood,[role+'/moodAt']:state[role].moodAt});renderMoods();burst('💕')}
 function renderMoods(){document.getElementById('moods').innerHTML=['him','her'].map(r=>`<div class="rounded-2xl bg-white/5 p-3"><div class="text-xs text-gray-500">${r==='him'?'Him':'Her'}</div><div class="mt-1 text-sm">${esc(state[r].mood||'No mood yet')}</div></div>`).join('')}
-function sendSignal(type,text){const item={id:crypto.randomUUID?crypto.randomUUID():String(now()+Math.random()),type,text,from:role,at:now()};state.signals.unshift(item);state.signals=state.signals.slice(0,40);remoteUpdate({signals:state.signals});renderTimeline();burst(type==='hug'?'🤗':'💗')}
+function sendSignal(type,text){
+  const item={id:crypto.randomUUID?crypto.randomUUID():String(now()+Math.random()),type,text,from:role,at:now()};
+  state.signals.unshift(item); state.signals=state.signals.slice(0,40);
+  remoteUpdate({signals:state.signals}); renderTimeline();
+  updateMissCounts(); burst(type==='hug'?'🤗':'💗');
+}
+function updateMissCounts(){
+  const mine=state.signals.filter(x=>x.type==='miss'&&x.from===role).length;
+  const theirs=state.signals.filter(x=>x.type==='miss'&&x.from!==role).length;
+  const el=document.getElementById('missCount');
+  if(el) el.textContent=`You: ${mine} · ${role==='him'?'Her':'Him'}: ${theirs}`;
+}
 function renderTimeline(){const items=[...state.signals].sort((a,b)=>b.at-a.at).slice(0,8);document.getElementById('timeline').innerHTML=items.length?items.map(x=>`<div class="flex gap-3 rounded-2xl bg-white/5 p-3"><div class="text-xl">${x.type==='hug'?'🤗':'💗'}</div><div class="flex-1"><div class="text-sm font-medium">${esc(x.text)}</div><div class="text-xs text-gray-500 mt-1">${x.from==='him'?'Him':'Her'} · ${new Date(x.at).toLocaleString([], {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}</div></div></div>`).join(''):'<div class="text-sm text-gray-500 text-center py-4">Your little moments will appear here.</div>'}
 function renderNotes(){const notes=[...state.notes].sort((a,b)=>b.at-a.at);document.getElementById('notes').innerHTML=notes.length?notes.map(n=>`<div class="rounded-2xl bg-white/5 p-4"><div class="flex justify-between gap-3"><div class="text-xs text-pink-300">${n.from==='him'?'Him':'Her'}</div><button onclick="deleteNote('${esc(n.id)}')" class="text-xs text-gray-600">Delete</button></div><div class="mt-2 text-sm leading-6 whitespace-pre-wrap break-words">${esc(n.text)}</div><div class="text-[11px] text-gray-600 mt-2">${new Date(n.at).toLocaleString()}</div></div>`).join(''):'<div class="text-sm text-gray-500 text-center py-4">Leave something sweet for later.</div>'}
 function openNoteModal(){showModal('Leave a note',`<textarea id="modalInput" rows="5" maxlength="1000" class="w-full rounded-2xl bg-black/20 border border-white/10 p-3 outline-none" placeholder="Write something only the two of you need to know…"></textarea><button onclick="saveNote()" class="w-full mt-3 rounded-2xl bg-gradient-to-r from-pink-500 to-purple-500 py-3 font-bold">Save note</button>`)}
@@ -127,8 +158,37 @@ function saveCall(){const v=document.getElementById('callInput').value;if(!v)ret
 function startCountdown(){clearInterval(countdownTimer);const tick=()=>{let d=state.targetCall?state.targetCall-now():0;if(d<0)d=0;const days=Math.floor(d/86400000),hours=Math.floor(d%86400000/3600000),mins=Math.floor(d%3600000/60000),secs=Math.floor(d%60000/1000);document.getElementById('countdown').innerHTML=[[days,'days'],[hours,'hours'],[mins,'min'],[secs,'sec']].map(x=>`<div class="rounded-2xl bg-white/5 p-3 text-center"><div class="text-2xl font-extrabold">${String(x[0]).padStart(2,'0')}</div><div class="text-[10px] uppercase tracking-widest text-gray-500 mt-1">${x[1]}</div></div>`).join('')};tick();countdownTimer=setInterval(tick,1000)}
 function initStart(){if(!state.targetCall){const d=new Date();const day=d.getDay();let add=(7-day)%7;const target=new Date(d);target.setDate(d.getDate()+add);target.setHours(20,0,0,0);if(target<=d)target.setDate(target.getDate()+7);state.targetCall=target.getTime()}if(!state.relationshipStart){state.relationshipStart=new Date().getTime()}save();document.getElementById('daysTogether').textContent=Math.max(1,Math.floor((now()-state.relationshipStart)/86400000));}
 function burst(symbol){for(let i=0;i<7;i++){const e=document.createElement('div');e.className='heartFloat';e.textContent=symbol;e.style.left=(20+Math.random()*60)+'vw';e.style.animationDelay=(Math.random()*.3)+'s';document.body.appendChild(e);setTimeout(()=>e.remove(),2100)}if(window.confetti)confetti({particleCount:35,spread:60,origin:{y:.75},colors:['#ff6fae','#a78bfa','#ffffff']})}
-function renderAll(){document.getElementById('roleText').textContent=role==='him'?'Him':'Her';renderPresence();renderMoods();renderTimeline();renderNotes();startCountdown();document.getElementById('lastSignal').textContent=state.signals[0]?`${state.signals[0].from==='him'?'Him':'Her'} · ${new Date(state.signals[0].at).toLocaleString([], {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}`:'Nothing yet'}
-if(ref){ref.on('value',snap=>{const x=snap.val();if(x){Object.assign(state,x);state.him=Object.assign({},{},state.him||{});state.her=Object.assign({},{},state.her||{});state.signals=Array.isArray(state.signals)?state.signals:[];state.notes=Array.isArray(state.notes)?state.notes:[];state.moments=Array.isArray(state.moments)?state.moments:[]}save();setLive(true);renderAll()}} ,()=>setLive(false));}else setLive(false);
+function renderAll(){document.getElementById('roleText').textContent=role==='him'?'Him':'Her';renderPresence();renderMoods();renderTimeline();renderNotes();updateMissCounts();startCountdown();document.getElementById('lastSignal').textContent=state.signals[0]?`${state.signals[0].from==='him'?'Him':'Her'} · ${new Date(state.signals[0].at).toLocaleString([], {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}`:'Nothing yet'}
+if(firebaseReady && ref){
+  const connectedRef=db.ref('.info/connected');
+  connectedRef.on('value',snap=>{
+    if(snap.val()===true) setLive(true,'Firebase connected');
+    else setLive(false,'Offline');
+  });
+  ref.on('value',snap=>{
+    const x=snap.val();
+    if(x){
+      Object.assign(state,x);
+      state.him=Object.assign({},state.him||{});
+      state.her=Object.assign({},state.her||{});
+      state.signals=Array.isArray(state.signals)?state.signals:[];
+      state.notes=Array.isArray(state.notes)?state.notes:[];
+      state.moments=Array.isArray(state.moments)?state.moments:[];
+    }
+    save(); setLive(true,'Firebase connected'); renderAll();
+  },err=>{
+    console.error('Firebase read failed:',err);
+    setLive(false,err && err.code==='PERMISSION_DENIED'?'Firebase permission denied':'Firebase read failed');
+  });
+  // Give a clear result even if the listener never receives a response.
+  setTimeout(()=>{
+    const b=document.getElementById('liveBadge');
+    if(b && b.textContent==='Connecting…') setLive(false,'Firebase timeout');
+  },8000);
+}else{
+  setLive(false,'Firebase unavailable');
+}
+
 initStart();renderAll();heartbeat();setInterval(heartbeat,10000);setInterval(renderPresence,5000);window.addEventListener('beforeunload',()=>{});
 </script>
 </body>
