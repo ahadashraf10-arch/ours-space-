@@ -1,17 +1,26 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Between Us — Our Space</title>
+    
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Tailwind CSS -->
+    
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Canvas Confetti -->
+    
+    <!-- Canvas Confetti CDN -->
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <!-- Firebase Compat SDKs (v9.23.0) -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
     <script>
         tailwind.config = {
             theme: {
@@ -38,6 +47,7 @@
             }
         }
     </script>
+
     <style>
         body {
             background-color: #FFFBF7;
@@ -46,13 +56,15 @@
                 radial-gradient(at 90% 90%, rgba(224, 122, 95, 0.12) 0px, transparent 50%),
                 radial-gradient(at 50% 50%, rgba(244, 241, 222, 0.3) 0px, transparent 50%);
             background-attachment: fixed;
+            user-select: none;
+            -webkit-user-select: none;
         }
 
         .glass-card {
-            background: rgba(255, 255, 255, 0.75);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.8);
+            background: rgba(255, 255, 255, 0.82);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid rgba(255, 255, 255, 0.9);
             box-shadow: 0 10px 30px -5px rgba(61, 64, 91, 0.05);
         }
 
@@ -85,25 +97,46 @@
             transform: translateY(-3px) rotate(0deg) !important;
             box-shadow: 5px 10px 20px rgba(0,0,0,0.08);
         }
+
+        .quantum-card {
+            background: linear-gradient(135deg, rgba(61, 64, 91, 0.95), rgba(224, 122, 95, 0.9), rgba(242, 132, 130, 0.95));
+            border: 1.5px solid rgba(255, 255, 255, 0.6);
+            box-shadow: 0 0 25px rgba(224, 122, 95, 0.4), inset 0 0 15px rgba(255, 255, 255, 0.3);
+            animation: quantum-pulse 3s infinite ease-in-out;
+        }
+
+        @keyframes quantum-pulse {
+            0%, 100% { box-shadow: 0 0 20px rgba(224, 122, 95, 0.4), inset 0 0 10px rgba(255, 255, 255, 0.2); }
+            50% { box-shadow: 0 0 35px rgba(242, 132, 130, 0.7), inset 0 0 20px rgba(255, 255, 255, 0.5); }
+        }
+
+        .btn-touch-active:active {
+            transform: scale(0.94);
+        }
     </style>
 </head>
 <body class="text-cozy-dark antialiased min-h-screen pb-16">
 
-    <!-- Header / Switcher -->
+    <!-- Header / Role Switcher -->
     <header class="max-w-md mx-auto pt-6 px-4 flex justify-between items-center">
         <div class="flex items-center space-x-2">
-            <div class="w-8 h-8 rounded-full bg-cozy-primary/10 flex items-center justify-center text-cozy-primary">
-                <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+            <div class="w-9 h-9 rounded-full bg-cozy-primary/10 flex items-center justify-center text-cozy-primary">
+                <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
             </div>
-            <span class="font-semibold text-lg tracking-tight">Between Us</span>
+            <div>
+                <span class="font-bold text-lg tracking-tight block leading-none">Between Us</span>
+                <span id="sync-status" class="text-[10px] text-cozy-lightText flex items-center space-x-1 mt-0.5 font-medium">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Live Connected
+                </span>
+            </div>
         </div>
 
         <!-- Role Toggle Switch -->
         <div class="glass-card p-1 rounded-full flex items-center space-x-1 border text-xs">
-            <button id="role-him" onclick="setRole('him')" class="px-3 py-1.5 rounded-full font-medium transition-all duration-200">
+            <button id="role-him" type="button" onclick="setRole('him')" class="px-3.5 py-1.5 rounded-full font-medium transition-all duration-200">
                 Him
             </button>
-            <button id="role-her" onclick="setRole('her')" class="px-3 py-1.5 rounded-full font-medium transition-all duration-200">
+            <button id="role-her" type="button" onclick="setRole('her')" class="px-3.5 py-1.5 rounded-full font-medium transition-all duration-200">
                 Her
             </button>
         </div>
@@ -112,57 +145,69 @@
     <!-- Main Content Container -->
     <main class="max-w-md mx-auto px-4 mt-6 space-y-6">
 
-        <!-- Presence & Relative Time Visit Tracker Card -->
+        <!-- Quantum Entanglement Banner -->
+        <div id="quantum-banner" class="hidden quantum-card rounded-3xl p-5 text-white text-center relative overflow-hidden transition-all duration-500 transform scale-100">
+            <div class="absolute -right-6 -bottom-6 w-20 h-20 bg-white/10 rounded-full blur-lg pointer-events-none"></div>
+            <div class="flex items-center justify-center space-x-2 mb-1">
+                <span class="text-lg animate-spin" style="animation-duration: 8s;">⚛️</span>
+                <span class="text-xs font-extrabold uppercase tracking-widest text-cozy-secondary">Entanglement Detected</span>
+                <span class="text-lg animate-spin" style="animation-duration: 8s;">✨</span>
+            </div>
+            <h3 class="font-bold text-lg leading-tight">You are both here right now!</h3>
+            <p class="font-hand text-xl mt-1 text-cozy-softPink">"Two particles connected across space in the exact same moment."</p>
+        </div>
+
+        <!-- Presence & Status Tracker Card -->
         <section class="glass-card rounded-3xl p-4 flex items-center justify-between text-xs">
             <div class="flex items-center space-x-2">
                 <div class="relative flex h-3 w-3">
-                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-cozy-accent opacity-75"></span>
-                    <span class="relative inline-flex rounded-full h-3 w-3 bg-cozy-accent"></span>
+                    <span id="him-ping" class="animate-ping absolute inline-flex h-full w-full rounded-full bg-cozy-accent opacity-75"></span>
+                    <span id="him-dot" class="relative inline-flex rounded-full h-3 w-3 bg-cozy-accent"></span>
                 </div>
                 <div>
-                    <span class="text-cozy-lightText block text-[10px] font-semibold uppercase tracking-wider">His Last Visit</span>
-                    <span id="him-last-seen" class="font-bold text-cozy-dark">Just now</span>
+                    <span class="text-cozy-lightText block text-[10px] font-semibold uppercase tracking-wider">His Status</span>
+                    <span id="him-last-seen" class="font-bold text-cozy-dark">Offline</span>
                 </div>
             </div>
             <div class="h-8 w-px bg-gray-200/60"></div>
             <div class="flex items-center space-x-2">
                 <div class="relative flex h-3 w-3">
-                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-cozy-rose opacity-75"></span>
-                    <span class="relative inline-flex rounded-full h-3 w-3 bg-cozy-rose"></span>
+                    <span id="her-ping" class="animate-ping absolute inline-flex h-full w-full rounded-full bg-cozy-rose opacity-75"></span>
+                    <span id="her-dot" class="relative inline-flex rounded-full h-3 w-3 bg-cozy-rose"></span>
                 </div>
                 <div>
-                    <span class="text-cozy-lightText block text-[10px] font-semibold uppercase tracking-wider">Her Last Visit</span>
-                    <span id="her-last-seen" class="font-bold text-cozy-dark">Not visited yet</span>
+                    <span class="text-cozy-lightText block text-[10px] font-semibold uppercase tracking-wider">Her Status</span>
+                    <span id="her-last-seen" class="font-bold text-cozy-dark">Offline</span>
                 </div>
             </div>
         </section>
 
-        <!-- Miss You Signal Button Card -->
+        <!-- Live Signal & "Miss You" Section -->
         <section class="glass-card rounded-3xl p-6 text-center relative overflow-hidden">
             <div class="absolute -top-12 -right-12 w-28 h-28 bg-cozy-secondary/20 rounded-full blur-xl pointer-events-none"></div>
 
             <p class="text-xs font-semibold text-cozy-primary uppercase tracking-widest mb-1">Live Thought Signal</p>
             <h1 class="text-2xl font-bold mb-4" id="signal-title">Thinking of You</h1>
 
-            <!-- Big Heart Button -->
+            <!-- Big Interactive Heart Button -->
             <div class="relative my-6 inline-block">
-                <button id="miss-you-btn" type="button" onclick="sendMissYouSignal()" class="w-28 h-28 rounded-full bg-gradient-to-tr from-cozy-primary to-cozy-rose text-white flex flex-col items-center justify-center mx-auto shadow-lg shadow-cozy-primary/30 pulse-glow transform active:scale-95 transition-transform cursor-pointer select-none">
-                    <svg class="w-10 h-10 fill-current mb-1 floating" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
-                    <span class="text-xs font-bold tracking-wide">MISS YOU</span>
+                <button id="miss-you-btn" type="button" onclick="sendMissYouSignal()" class="w-32 h-32 rounded-full bg-gradient-to-tr from-cozy-primary to-cozy-rose text-white flex flex-col items-center justify-center mx-auto shadow-lg shadow-cozy-primary/30 pulse-glow btn-touch-active transition-transform cursor-pointer select-none">
+                    <svg class="w-12 h-12 fill-current mb-1 floating" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                    <span class="text-xs font-bold tracking-wider">MISS YOU</span>
                 </button>
             </div>
 
-            <!-- Missing You Stats (Weekly + All-Time Total) -->
+            <!-- Missing You Stats (He Missed You + She Missed You) -->
             <div class="grid grid-cols-2 gap-3 mt-4 pt-4 border-t border-gray-100">
-                <div class="bg-cozy-bg/80 rounded-2xl p-3 border border-gray-100/60">
-                    <span class="text-[10px] text-cozy-lightText font-medium block uppercase tracking-wider">This Week</span>
-                    <span id="him-count" class="text-lg font-bold text-cozy-primary">0</span>
-                    <span class="text-xs text-cozy-lightText block">times sent</span>
+                <div class="bg-cozy-bg/80 rounded-2xl p-3 border border-gray-100/60 text-center">
+                    <span class="text-[10px] text-cozy-primary font-extrabold uppercase tracking-wider block">He Missed You</span>
+                    <span id="him-miss-count" class="text-2xl font-bold text-cozy-primary block mt-0.5">0</span>
+                    <span class="text-[11px] text-cozy-lightText block">times</span>
                 </div>
-                <div class="bg-cozy-bg/80 rounded-2xl p-3 border border-gray-100/60">
-                    <span class="text-[10px] text-cozy-lightText font-medium block uppercase tracking-wider">All-Time Total</span>
-                    <span id="total-count" class="text-lg font-bold text-cozy-dark">0</span>
-                    <span class="text-xs text-cozy-lightText block">times missed</span>
+                <div class="bg-cozy-bg/80 rounded-2xl p-3 border border-gray-100/60 text-center">
+                    <span class="text-[10px] text-cozy-rose font-extrabold uppercase tracking-wider block">She Missed You</span>
+                    <span id="her-miss-count" class="text-2xl font-bold text-cozy-rose block mt-0.5">0</span>
+                    <span class="text-[11px] text-cozy-lightText block">times</span>
                 </div>
             </div>
 
@@ -171,15 +216,15 @@
             </p>
         </section>
 
-        <!-- Call / Date Countdown Card -->
+        <!-- Call Countdown Section -->
         <section class="glass-card rounded-3xl p-6">
             <div class="flex items-center justify-between mb-4">
                 <div class="flex items-center space-x-2">
-                    <span class="text-cozy-accent font-bold">📞</span>
+                    <span class="text-cozy-accent font-bold text-base">📞</span>
                     <h2 class="text-sm font-bold tracking-tight">Our Next Talk</h2>
                 </div>
-                <button onclick="editCountdown()" class="text-xs text-cozy-lightText hover:text-cozy-dark flex items-center space-x-1">
-                    <span>⚙️ Set Time</span>
+                <button type="button" onclick="editCountdown()" class="text-xs text-cozy-lightText hover:text-cozy-dark flex items-center space-x-1 bg-gray-100/60 px-2.5 py-1 rounded-full transition active:scale-95">
+                    <span>⚙ Set Time</span>
                 </button>
             </div>
 
@@ -201,86 +246,107 @@
                     <span class="text-[10px] text-cozy-lightText font-medium uppercase">Secs</span>
                 </div>
             </div>
-            <p id="countdown-label" class="text-center text-xs text-cozy-lightText mt-3">Counting down to our weekly catch-up!</p>
+            <p id="countdown-label" class="text-center text-xs text-cozy-lightText mt-3">Counting down to our special time!</p>
         </section>
 
-        <!-- Mood Tracker Section -->
+        <!-- Daily Mood Check-In -->
         <section class="glass-card rounded-3xl p-6">
             <h2 class="text-sm font-bold tracking-tight mb-3 flex items-center space-x-2">
                 <span>😊</span>
                 <span>How are you feeling today?</span>
             </h2>
             <div class="grid grid-cols-4 gap-2">
-                <button onclick="setMood('Happy ☀️')" class="mood-btn p-3 rounded-2xl bg-cozy-bg hover:bg-cozy-secondary/20 text-center transition border border-gray-100 flex flex-col items-center">
+                <button type="button" onclick="setMood('Happy ☀️')" class="mood-btn p-3 rounded-2xl bg-cozy-bg hover:bg-cozy-secondary/20 text-center transition border border-gray-100 flex flex-col items-center active:scale-95">
                     <span class="text-xl">☀️</span>
                     <span class="text-[10px] font-semibold mt-1">Happy</span>
                 </button>
-                <button onclick="setMood('Tired 😴')" class="mood-btn p-3 rounded-2xl bg-cozy-bg hover:bg-cozy-secondary/20 text-center transition border border-gray-100 flex flex-col items-center">
+                <button type="button" onclick="setMood('Tired 😴')" class="mood-btn p-3 rounded-2xl bg-cozy-bg hover:bg-cozy-secondary/20 text-center transition border border-gray-100 flex flex-col items-center active:scale-95">
                     <span class="text-xl">😴</span>
                     <span class="text-[10px] font-semibold mt-1">Tired</span>
                 </button>
-                <button onclick="setMood('Busy 📚')" class="mood-btn p-3 rounded-2xl bg-cozy-bg hover:bg-cozy-secondary/20 text-center transition border border-gray-100 flex flex-col items-center">
+                <button type="button" onclick="setMood('Busy 📚')" class="mood-btn p-3 rounded-2xl bg-cozy-bg hover:bg-cozy-secondary/20 text-center transition border border-gray-100 flex flex-col items-center active:scale-95">
                     <span class="text-xl">📚</span>
                     <span class="text-[10px] font-semibold mt-1">Busy</span>
                 </button>
-                <button onclick="setMood('Need Hug 🤗')" class="mood-btn p-3 rounded-2xl bg-cozy-bg hover:bg-cozy-secondary/20 text-center transition border border-gray-100 flex flex-col items-center">
+                <button type="button" onclick="setMood('Need Hug 🤗')" class="mood-btn p-3 rounded-2xl bg-cozy-bg hover:bg-cozy-secondary/20 text-center transition border border-gray-100 flex flex-col items-center active:scale-95">
                     <span class="text-xl">🤗</span>
                     <span class="text-[10px] font-semibold mt-1">Need Hug</span>
                 </button>
             </div>
-            <div id="current-mood-box" class="mt-4 p-3 rounded-2xl bg-cozy-softPink/40 text-xs text-cozy-dark flex items-center justify-between">
+            <div class="mt-4 p-3 rounded-2xl bg-cozy-softPink/40 text-xs text-cozy-dark flex items-center justify-between">
                 <span>Current Status:</span>
                 <span id="current-mood-text" class="font-bold">Not set yet</span>
             </div>
         </section>
 
-        <!-- Virtual Note Jar -->
+        <!-- Virtual Note Board -->
         <section class="glass-card rounded-3xl p-6">
             <div class="flex items-center justify-between mb-4">
                 <div class="flex items-center space-x-2">
                     <span>📝</span>
                     <h2 class="text-sm font-bold tracking-tight">Our Virtual Note Jar</h2>
                 </div>
-                <button onclick="openNoteModal()" class="px-3 py-1.5 rounded-full bg-cozy-primary text-white text-xs font-semibold flex items-center space-x-1 shadow-sm hover:bg-cozy-primaryHover transition">
+                <button type="button" onclick="openNoteModal()" class="px-3.5 py-1.5 rounded-full bg-cozy-primary text-white text-xs font-semibold flex items-center space-x-1 shadow-sm hover:bg-cozy-primaryHover transition active:scale-95">
                     <span>+ Leave Note</span>
                 </button>
             </div>
 
-            <!-- Notes Grid Container -->
             <div id="notes-container" class="space-y-3">
-                <!-- Notes render dynamically -->
+                <!-- Dynamic Notes -->
             </div>
         </section>
 
     </main>
 
-    <!-- Modal for Adding Note -->
+    <!-- Note Modal -->
     <div id="note-modal" class="fixed inset-0 bg-black/40 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
         <div class="bg-white rounded-3xl p-6 w-full max-w-sm shadow-xl space-y-4">
             <div class="flex justify-between items-center">
                 <h3 class="font-bold text-base">Write a Little Note</h3>
-                <button onclick="closeNoteModal()" class="text-gray-400 hover:text-gray-600 font-bold text-lg">
+                <button type="button" onclick="closeNoteModal()" class="text-gray-400 hover:text-gray-600 font-bold text-lg p-1">
                     ✕
                 </button>
             </div>
             <textarea id="note-text" rows="4" placeholder="Write something sweet, an inside joke, or a thought..." class="w-full rounded-2xl p-3 bg-cozy-bg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-cozy-primary/50 resize-none"></textarea>
             <div class="flex space-x-2">
-                <button onclick="saveNote()" class="w-full py-3 bg-cozy-primary text-white rounded-2xl font-semibold text-sm shadow-md hover:bg-cozy-primaryHover transition">
+                <button type="button" onclick="saveNote()" class="w-full py-3 bg-cozy-primary text-white rounded-2xl font-semibold text-sm shadow-md hover:bg-cozy-primaryHover transition active:scale-95">
                     Pin to Board
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- Script Logic -->
     <script>
-        // State Management
+        // Initialize Firebase Realtime Database
+        const firebaseConfig = {
+            databaseURL: "https://between-us-8fb06-default-rtdb.firebaseio.com/"
+        };
+        
+        let db = null;
+        let dbRef = null;
+
+        try {
+            firebase.initializeApp(firebaseConfig);
+            db = firebase.database();
+            dbRef = db.ref("space_data");
+        } catch(e) {
+            console.warn("Firebase initialization issue:", e);
+        }
+
+        // Global Application State
         let currentRole = localStorage.getItem('userRole') || 'him';
-        let himCount = parseInt(localStorage.getItem('himCount') || '0');
-        let totalCount = parseInt(localStorage.getItem('totalCount') || '0');
-        let currentMood = localStorage.getItem('currentMood') || 'Not set yet';
-        let targetCallDate = localStorage.getItem('targetCallDate') || getNextSunday();
-        let notes = JSON.parse(localStorage.getItem('relationshipNotes') || '[]');
+        let wasEntangled = false;
+        let appState = {
+            himMissCount: parseInt(localStorage.getItem('himMissCount') || '0'),
+            herMissCount: parseInt(localStorage.getItem('herMissCount') || '0'),
+            lastPingTime: localStorage.getItem('lastPingTime') || '',
+            lastPingBy: localStorage.getItem('lastPingBy') || '',
+            currentMood: localStorage.getItem('currentMood') || 'Not set yet',
+            targetCallDate: localStorage.getItem('targetCallDate') || getNextSunday(),
+            notes: JSON.parse(localStorage.getItem('relationshipNotes') || '[]'),
+            himHeartbeat: parseInt(localStorage.getItem('himHeartbeat') || '0'),
+            herHeartbeat: parseInt(localStorage.getItem('herHeartbeat') || '0')
+        };
 
         function getNextSunday() {
             let now = new Date();
@@ -290,13 +356,14 @@
             return nextSun.toISOString();
         }
 
-        function timeAgo(timestamp) {
-            if (!timestamp) return 'Not visited yet';
-            let past = new Date(parseInt(timestamp));
-            let now = new Date();
+        function formatPresence(timestamp) {
+            if (!timestamp || timestamp === 0) return 'Not visited yet';
+            let past = parseInt(timestamp);
+            let now = Date.now();
             let diffSecs = Math.floor((now - past) / 1000);
 
-            if (diffSecs < 60) return 'Just now';
+            if (diffSecs < 35) return 'Online Now ⚛️';
+            if (diffSecs < 60) return '1 min ago';
             let diffMins = Math.floor(diffSecs / 60);
             if (diffMins < 60) return `${diffMins} min${diffMins > 1 ? 's' : ''} ago`;
             let diffHours = Math.floor(diffMins / 60);
@@ -305,100 +372,7 @@
             return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
         }
 
-        function recordVisit() {
-            let now = Date.now().toString();
-            if (currentRole === 'him') {
-                localStorage.setItem('himLastSeenTime', now);
-            } else {
-                localStorage.setItem('herLastSeenTime', now);
-            }
-            updateLastSeenDisplay();
-        }
+        function setupLiveFirebaseSync() {
+            if (!dbRef) return;
 
-        function updateLastSeenDisplay() {
-            let himTime = localStorage.getItem('himLastSeenTime');
-            let herTime = localStorage.getItem('herLastSeenTime');
-
-            document.getElementById('him-last-seen').innerText = timeAgo(himTime);
-            document.getElementById('her-last-seen').innerText = timeAgo(herTime);
-        }
-
-        function initApp() {
-            setRole(currentRole);
-            recordVisit();
-            updateCounters();
-            updateMoodUI();
-            renderNotes();
-            startCountdown();
-
-            setInterval(updateLastSeenDisplay, 30000);
-        }
-
-        function setRole(role) {
-            currentRole = role;
-            localStorage.setItem('userRole', role);
-
-            const himBtn = document.getElementById('role-him');
-            const herBtn = document.getElementById('role-her');
-
-            if (role === 'him') {
-                himBtn.className = "px-3 py-1.5 rounded-full font-medium transition-all duration-200 bg-cozy-primary text-white shadow-sm";
-                herBtn.className = "px-3 py-1.5 rounded-full font-medium transition-all duration-200 text-cozy-lightText hover:text-cozy-dark";
-            } else {
-                herBtn.className = "px-3 py-1.5 rounded-full font-medium transition-all duration-200 bg-cozy-primary text-white shadow-sm";
-                himBtn.className = "px-3 py-1.5 rounded-full font-medium transition-all duration-200 text-cozy-lightText hover:text-cozy-dark";
-            }
-            recordVisit();
-        }
-
-        function sendMissYouSignal() {
-            himCount++;
-            totalCount++;
-
-            localStorage.setItem('himCount', himCount.toString());
-            localStorage.setItem('totalCount', totalCount.toString());
-
-            let now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            localStorage.setItem('lastPingTime', now);
-
-            updateCounters();
-
-            if (typeof confetti === 'function') {
-                confetti({
-                    particleCount: 25,
-                    spread: 60,
-                    origin: { y: 0.6 },
-                    colors: ['#E07A5F', '#F28482', '#F2CC8F']
-                });
-            }
-        }
-
-        function updateCounters() {
-            document.getElementById('him-count').innerText = himCount;
-            document.getElementById('total-count').innerText = totalCount;
-            
-            let lastPing = localStorage.getItem('lastPingTime');
-            if (lastPing) {
-                document.getElementById('last-ping-time').innerText = `Last ping sent today at ${lastPing}`;
-            }
-        }
-
-        function setMood(mood) {
-            currentMood = mood;
-            localStorage.setItem('currentMood', mood);
-            updateMoodUI();
-        }
-
-        function updateMoodUI() {
-            document.getElementById('current-mood-text').innerText = currentMood;
-        }
-
-        function startCountdown() {
-            function updateTimer() {
-                let now = new Date().getTime();
-                let target = new Date(targetCallDate).getTime();
-                let diff = target - now;
-
-                if (diff <= 0) {
-                    document.getElementById('cd-days').innerText = "00";
-                    document.getElementById('cd-hours
+        
