@@ -73,7 +73,7 @@ button,input,textarea{font:inherit}button{cursor:pointer}.glass{background:var(-
 
 <section class="glass rounded-[28px] p-5 mb-4 fade">
   <div class="flex justify-between items-center gap-3"><div><p class="text-xs text-pink-200/70 uppercase tracking-[.22em]">our memories</p><h2 class="text-xl font-bold mt-1">Our Storybook 📸</h2><p class="text-xs text-gray-500 mt-1">Photos, little stories, and the days you never want to forget.</p></div><button onclick="openMemoryModal()" class="shrink-0 rounded-xl bg-gradient-to-r from-pink-500/90 to-purple-500/90 px-3 py-2 text-xs font-semibold">+ Memory</button></div>
-  <div id="memories" class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
+  <div id="memories" class="mt-6 relative pl-7"></div>
 </section>
 
 <section class="glass rounded-[28px] p-5 mb-4 fade">
@@ -99,7 +99,7 @@ button,input,textarea{font:inherit}button{cursor:pointer}.glass{background:var(-
 
 <script>
 const firebaseConfig={databaseURL:'https://between-us-8fb06-default-rtdb.firebaseio.com/',storageBucket:'between-us-8fb06.firebasestorage.app'};
-let db=null, ref=null, storage=null, firebaseReady=false, storageReady=false;
+let db=null, ref=null, storage=null, firebaseReady=false, storageReady=false, firebaseConnected=false;
 try{
   if(!window.firebase) throw new Error('Firebase SDK did not load. Check your internet connection or hosting CSP.');
   firebase.initializeApp(firebaseConfig);
@@ -111,55 +111,179 @@ try{
   console.error('Firebase initialization failed:',e);
 }
 
-const KEY='betweenUs_v2';
+const LEGACY_PATH='space_data';
+const DATA_PATH='space_data/app_v3';
+const JOURNAL_PATH='space_data/app_v3_journal';
+const KEY='betweenUs_v3_local';
+let savedState={};
+try{ savedState=JSON.parse(localStorage.getItem(KEY)||'{}')||{}; }catch(e){ console.warn('Ignoring invalid local state:',e); }
 const state=Object.assign({
   him:{mood:null,moodAt:null,heartbeat:0},her:{mood:null,moodAt:null,heartbeat:0},
-  signals:[],notes:[],moments:[],targetCall:null,relationshipStart:null
-},JSON.parse(localStorage.getItem(KEY)||'{}'));
-let role=localStorage.getItem('userRole')||'him', countdownTimer=null;
+  signals:{},notes:{},moments:{},memories:{},targetCall:null,relationshipStart:null
+},savedState);
+state.him=Object.assign({mood:null,moodAt:null,heartbeat:0},state.him||{});
+state.her=Object.assign({mood:null,moodAt:null,heartbeat:0},state.her||{});
+state.signals=toMap(state.signals); state.notes=toMap(state.notes); state.moments=toMap(state.moments); state.memories=toMap(state.memories);
+let role=localStorage.getItem('userRole')||'him', countdownTimer=null, serverLoaded=false;
 const esc=s=>String(s??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
-const save=()=>localStorage.setItem(KEY,JSON.stringify(state));
-function remoteUpdate(patch){
-  save();
-  if(!ref || !firebaseReady) return;
-  ref.update(patch).then(()=>setLive(true)).catch(e=>{
-    console.error('Firebase write failed:',e);
-    setLive(false,'Firebase write denied');
-  });
+const saveLocal=()=>{try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){console.warn('Local save failed:',e)}};
+function toMap(value){if(!value)return {};if(!Array.isArray(value)&&typeof value==='object')return value;const out={};(Array.isArray(value)?value:[]).forEach(v=>{if(v&&v.id)out[v.id]=v});return out}
+function listActive(map){return Object.values(map||{}).filter(x=>x&&!x.deletedAt)}
+function uid(prefix='item'){return (crypto.randomUUID?crypto.randomUUID():prefix+'_'+Date.now()+'_'+Math.random().toString(36).slice(2))}
+async function writeRecord(collection,id,data){
+  if(!ref||!firebaseReady) throw new Error('Firebase is not connected. Your data was not saved online.');
+  const path=`${collection}/${id}`;
+  await ref.child('app_v3').child(path).set(data);
+  await ref.child('app_v3_journal').push({at:now(),action:'upsert',path,data});
 }
-function setLive(ok,label){
-  const b=document.getElementById('liveBadge');
-  b.textContent=label || (ok?'Live Connected':'Local Mode');
-  b.className='text-xs px-3 py-1.5 rounded-full '+(ok?'bg-emerald-400/10 text-emerald-300':'bg-white/5 text-gray-300');
+async function patchRecord(collection,id,patch){
+  if(!ref||!firebaseReady) throw new Error('Firebase is not connected. Your data was not saved online.');
+  await ref.child('app_v3').child(collection).child(id).update(patch);
+  await ref.child('app_v3_journal').push({at:now(),action:'patch',path:`${collection}/${id}`,patch});
 }
+function remoteRootUpdate(patch){
+  saveLocal();
+  if(!ref||!firebaseReady)return Promise.reject(new Error('Firebase is not connected.'));
+  return ref.child('app_v3').update(patch).then(()=>setLive(true,'Firebase connected')).catch(e=>{console.error('Firebase write failed:',e);setLive(false,'Not saved online');throw e});
+}
+function setLive(ok,label){const b=document.getElementById('liveBadge');if(!b)return;b.textContent=label||(ok?'Firebase connected':'Local Mode');b.className='text-xs px-3 py-1.5 rounded-full '+(ok?'bg-emerald-400/10 text-emerald-300':'bg-white/5 text-gray-300')}
 function now(){return Date.now()}
 function fmtAge(ts){if(!ts)return 'Not seen yet';let s=Math.max(0,Math.floor((now()-ts)/1000));if(s<35)return 'Online now';if(s<60)return 'Last seen just now';if(s<3600)return `Last seen ${Math.floor(s/60)}m ago`;if(s<86400)return `Last seen ${Math.floor(s/3600)}h ago`;return `Last seen ${Math.floor(s/86400)}d ago`}
-function renderPresence(){['him','her'].forEach(r=>{const online=!!state[r].heartbeat&&now()-state[r].heartbeat<35000;document.getElementById(r+'Presence').textContent=fmtAge(state[r].heartbeat);document.getElementById(r+'Dot').textContent=online?'●':'○';document.getElementById(r+'Dot').className=online?'text-emerald-300':'text-gray-600'});const both=['him','her'].every(r=>!!state[r].heartbeat&&now()-state[r].heartbeat<35000);document.getElementById('entangled').classList.toggle('hidden',!both);}
-function heartbeat(){state[role].heartbeat=now();remoteUpdate({[role+'/heartbeat']:state[role].heartbeat});renderPresence()}
+function renderPresence(){['him','her'].forEach(r=>{const online=!!state[r].heartbeat&&now()-state[r].heartbeat<35000;document.getElementById(r+'Presence').textContent=fmtAge(state[r].heartbeat);document.getElementById(r+'Dot').textContent=online?'●':'○';document.getElementById(r+'Dot').className=online?'text-emerald-300':'text-gray-600'});const both=['him','her'].every(r=>!!state[r].heartbeat&&now()-state[r].heartbeat<35000);document.getElementById('entangled').classList.toggle('hidden',!both)}
+async function heartbeat(){state[role].heartbeat=now();saveLocal();try{await remoteRootUpdate({[role+'/heartbeat']:state[role].heartbeat})}catch(e){}renderPresence()}
 function toggleRole(){role=role==='him'?'her':'him';localStorage.setItem('userRole',role);document.getElementById('roleText').textContent=role==='him'?'Him':'Her';heartbeat();renderMoods()}
-function setMood(mood){state[role].mood=mood;state[role].moodAt=now();remoteUpdate({[role+'/mood']:mood,[role+'/moodAt']:state[role].moodAt});renderMoods();burst('💕')}
+async function setMood(mood){state[role].mood=mood;state[role].moodAt=now();saveLocal();try{await remoteRootUpdate({[role+'/mood']:mood,[role+'/moodAt']:state[role].moodAt})}catch(e){}renderMoods();burst('💕')}
 function renderMoods(){document.getElementById('moods').innerHTML=['him','her'].map(r=>`<div class="rounded-2xl bg-white/5 p-3"><div class="text-xs text-gray-500">${r==='him'?'Him':'Her'}</div><div class="mt-1 text-sm">${esc(state[r].mood||'No mood yet')}</div></div>`).join('')}
-function sendSignal(type,text){
-  const item={id:crypto.randomUUID?crypto.randomUUID():String(now()+Math.random()),type,text,from:role,at:now()};
-  state.signals.unshift(item); state.signals=state.signals.slice(0,40);
-  remoteUpdate({signals:state.signals}); renderTimeline();
-  updateMissCounts(); burst(type==='hug'?'🤗':'💗');
-}
-function updateMissCounts(){
-  const mine=state.signals.filter(x=>x.type==='miss'&&x.from===role).length;
-  const theirs=state.signals.filter(x=>x.type==='miss'&&x.from!==role).length;
-  const el=document.getElementById('missCount');
-  if(el) el.textContent=`You: ${mine} · ${role==='him'?'Her':'Him'}: ${theirs}`;
-}
-function renderTimeline(){const items=[...state.signals].sort((a,b)=>b.at-a.at).slice(0,8);document.getElementById('timeline').innerHTML=items.length?items.map(x=>`<div class="flex gap-3 rounded-2xl bg-white/5 p-3"><div class="text-xl">${x.type==='hug'?'🤗':'💗'}</div><div class="flex-1"><div class="text-sm font-medium">${esc(x.text)}</div><div class="text-xs text-gray-500 mt-1">${x.from==='him'?'Him':'Her'} · ${new Date(x.at).toLocaleString([], {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}</div></div></div>`).join(''):'<div class="text-sm text-gray-500 text-center py-4">Your little moments will appear here.</div>'}
-function renderNotes(){const notes=[...state.notes].sort((a,b)=>b.at-a.at);document.getElementById('notes').innerHTML=notes.length?notes.map(n=>`<div class="rounded-2xl bg-white/5 p-4"><div class="flex justify-between gap-3"><div class="text-xs text-pink-300">${n.from==='him'?'Him':'Her'}</div><button onclick="deleteNote('${esc(n.id)}')" class="text-xs text-gray-600">Delete</button></div><div class="mt-2 text-sm leading-6 whitespace-pre-wrap break-words">${esc(n.text)}</div><div class="text-[11px] text-gray-600 mt-2">${new Date(n.at).toLocaleString()}</div></div>`).join(''):'<div class="text-sm text-gray-500 text-center py-4">Leave something sweet for later.</div>'}
+async function sendSignal(type,text){const item={id:uid('signal'),type,text,from:role,at:now()};state.signals[item.id]=item;saveLocal();try{await writeRecord('signals',item.id,item)}catch(e){delete state.signals[item.id];saveLocal();alert('Not saved. Firebase is not connected yet.');return}renderTimeline();updateMissCounts();burst(type==='hug'?'🤗':'💗')}
+function updateMissCounts(){const active=listActive(state.signals);const mine=active.filter(x=>x.type==='miss'&&x.from===role).length;const theirs=active.filter(x=>x.type==='miss'&&x.from!==role).length;const el=document.getElementById('missCount');if(el)el.textContent=`You: ${mine} · ${role==='him'?'Her':'Him'}: ${theirs}`}
+function renderTimeline(){const items=listActive(state.signals).sort((a,b)=>b.at-a.at).slice(0,8);document.getElementById('timeline').innerHTML=items.length?items.map(x=>`<div class="flex gap-3 rounded-2xl bg-white/5 p-3"><div class="text-xl">${x.type==='hug'?'🤗':'💗'}</div><div class="flex-1"><div class="text-sm font-medium">${esc(x.text)}</div><div class="text-xs text-gray-500 mt-1">${x.from==='him'?'Him':'Her'} · ${new Date(x.at).toLocaleString([], {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}</div></div></div>`).join(''):'<div class="text-sm text-gray-500 text-center py-4">Your little moments will appear here.</div>'}
+function renderNotes(){const notes=listActive(state.notes).sort((a,b)=>b.at-a.at);document.getElementById('notes').innerHTML=notes.length?notes.map(n=>`<div class="rounded-2xl bg-white/5 p-4"><div class="flex justify-between gap-3"><div class="text-xs text-pink-300">${n.from==='him'?'Him':'Her'}</div><button onclick="deleteNote('${esc(n.id)}')" class="text-xs text-gray-600">Archive</button></div><div class="mt-2 text-sm leading-6 whitespace-pre-wrap break-words">${esc(n.text)}</div><div class="text-[11px] text-gray-600 mt-2">${new Date(n.at).toLocaleString()}</div></div>`).join(''):'<div class="text-sm text-gray-500 text-center py-4">Leave something sweet for later.</div>'}
 function openNoteModal(){showModal('Leave a note',`<textarea id="modalInput" rows="5" maxlength="1000" class="w-full rounded-2xl bg-black/20 border border-white/10 p-3 outline-none" placeholder="Write something only the two of you need to know…"></textarea><button onclick="saveNote()" class="w-full mt-3 rounded-2xl bg-gradient-to-r from-pink-500 to-purple-500 py-3 font-bold">Save note</button>`)}
-function saveNote(){const text=document.getElementById('modalInput').value.trim();if(!text)return;state.notes.push({id:crypto.randomUUID?crypto.randomUUID():String(now()),text,from:role,at:now()});remoteUpdate({notes:state.notes});renderNotes();closeModal();burst('💌')}
-function deleteNote(id){state.notes=state.notes.filter(n=>n.id!==id);remoteUpdate({notes:state.notes});renderNotes()}
+async function saveNote(){const text=document.getElementById('modalInput').value.trim();if(!text)return;const item={id:uid('note'),text,from:role,at:now(),deletedAt:null};try{await writeRecord('notes',item.id,item);state.notes[item.id]=item;saveLocal();renderNotes();closeModal();burst('💌')}catch(e){alert('This note was not saved. Check the Firebase connection.')}}
+async function deleteNote(id){if(!state.notes[id])return;if(!confirm('Archive this note? It will remain in your history and will not be permanently deleted.'))return;try{await patchRecord('notes',id,{deletedAt:now()});state.notes[id].deletedAt=now();saveLocal();renderNotes()}catch(e){alert('The note was not archived because Firebase is not connected.')}}
 function openMomentModal(){showModal('Add a moment',`<input id="momentTitle" maxlength="80" class="w-full rounded-2xl bg-black/20 border border-white/10 p-3 outline-none" placeholder="e.g. She sent me a random voice note"><input id="momentDate" type="date" class="w-full mt-3 rounded-2xl bg-black/20 border border-white/10 p-3 outline-none"><button onclick="saveMoment()" class="w-full mt-3 rounded-2xl bg-gradient-to-r from-pink-500 to-purple-500 py-3 font-bold">Add moment</button>`)}
-function saveMoment(){const title=document.getElementById('momentTitle').value.trim();if(!title)return;state.moments.unshift({id:String(now()),title,date:document.getElementById('momentDate').value||new Date().toISOString().slice(0,10),from:role});remoteUpdate({moments:state.moments});closeModal();burst('✨')}
-function normalizeList(value){if(!value)return [];return Array.isArray(value)?value:Object.entries(value).map(([id,v])=>Object.assign({id},v||{}))}
-function renderMemories(){const memories=[...state.memories].sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')) || (b.createdAt||0)-(a.createdAt||0));const el=document.getElementById('memories');if(!memories.length){el.innerHTML='<div class="col-span-full text-sm text-gray-500 text-center py-5">Your favorite photos and stories will live here. ❤️</div>';return;}el.innerHTML=memories.map(m=>`<article class="overflow-hidden rounded-2xl bg-white/5 border border-white/5"><div class="relative aspect-[4/3] bg-black/20">${m.photoUrl?`<img src="${esc(m.photoUrl)}" alt="${esc(m.title)}" class="w-full h-full object-cover" loading="lazy">`:'<div class="w-full h-full flex items-center justify-center text-5xl">💞</div>'}</div><div class="p-4"><div class="flex items-start justify-between gap-3"><div class="min-w-0"><h3 class="font-bold truncate">${esc(m.title)}</h3><div class="text-[11px] text-gray-500 mt-1">${m.date?new Date(m.date+'T12:00:00').toLocaleDateString([], {day:'numeric',month:'long',year:'numeric'}):''}${m.location?` · ${esc(m.location)}`:''}</div></div><button onclick="deleteMemory('${esc(m.id)}')" class="text-[11px] text-gray-600 hover:text-red-300">Delete</button></div>${m.caption?`<p class="text-sm text-gray-300 leading-6 mt-3 whitespace-pre-wrap break-words">${esc(m.caption)}</p>`:''}<div class="text-[10px] text-gray-600 mt-3">Added by ${m.from==='him'?'Him':'Her'}</div></div></article>`).join('')}
-function openMemoryModal(){const today=new Date().toISOString().slice(0,10);showModal('Add a memory',`<div class="space-y-3"><label class="block text-xs text-gray-400">Photo <span class="text-gray-600">(optional)</span></label><input id="memoryPhoto" type="file" accept="image/*" class="w-full rounded-2xl bg-black/20 border border-white/10 p-3 text-sm"><input id="memoryTitle" maxlength="80" class="w-full rounded-2xl bg-black/20 border border-white/10 p-3 outline-none" placeholder="Memory title"><textarea id="memoryCaption" maxlength="1000" rows="4" class="w-full rounded-2xl bg-black/20 border border-white/10 p-3 outline-none resize-none" placeholder="What happened? Tell your future selves the story…"></textarea><input id="memoryDate" type="date" value="${today}" class="w-full rounded-2xl bg-black/20 border border-white/10 p-3 outline-none"><input id="memoryLocation" maxlength="100" class="w-full rounded-2xl bg-black/20 border border-white/10 p-3 outline-none" placeholder="Location (optional)"><div id="memoryProgress" class="hidden text-xs text-gray-400 text-center"></div><button id="memorySaveBtn" onclick="saveMemory()" class="w-full rounded-2xl bg-gradient-to-r from-pink-500 to-purple-500 py-3 font-bold">Save memory ❤️</button></div>`)}
+async function saveMoment(){const title=document.getElementById('momentTitle').value.trim();if(!title)return;const item={id:uid('moment'),title,date:document.getElementById('momentDate').value||new Date().toISOString().slice(0,10),from:role,createdAt:now(),deletedAt:null};try{await writeRecord('moments',item.id,item);state.moments[item.id]=item;saveLocal();closeModal();burst('✨')}catch(e){alert('This moment was not saved. Check the Firebase connection.')}}
+function normalizeList(value){return toMap(value)}
+function renderMemories(){
+ const memories=listActive(state.memories).sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))||(b.createdAt||0)-(a.createdAt||0));
+ const el=document.getElementById('memories');
+ if(!memories.length){el.innerHTML='<div class="relative"><div class="absolute -left-[29px] top-2 w-3 h-3 rounded-full bg-pink-400 ring-4 ring-[#15131d]"></div><div class="rounded-2xl bg-white/5 p-5 text-sm text-gray-500">Your story starts here. Add the first memory. ❤️</div></div>';return;}
+ el.innerHTML=`<div class="absolute left-2 top-1 bottom-1 w-px bg-gradient-to-b from-pink-400/70 via-purple-400/40 to-transparent"></div>`+memories.map((m,i)=>`<article class="relative mb-7"><div class="absolute -left-[29px] top-4 w-3 h-3 rounded-full bg-pink-300 ring-4 ring-[#15131d]"></div><div class="text-[10px] uppercase tracking-[.18em] text-pink-300/80 mb-2">${m.date?new Date(m.date+'T12:00:00').toLocaleDateString([], {day:'numeric',month:'long',year:'numeric'}):''}</div><div class="overflow-hidden rounded-[24px] bg-white/5 border border-white/10 shadow-lg">${m.photoUrl?`<img src="${esc(m.photoUrl)}" alt="${esc(m.title)}" class="w-full max-h-80 object-cover" loading="lazy">`:''}<div class="p-4"><div class="flex items-start justify-between gap-3"><div><h3 class="font-bold text-lg">${esc(m.title)}</h3>${m.location?`<div class="text-[11px] text-gray-500 mt-1">📍 ${esc(m.location)}</div>`:''}</div><button onclick="archiveMemory('${esc(m.id)}')" class="text-[11px] text-gray-600 hover:text-red-300">Archive</button></div>${m.caption?`<p class="text-sm text-gray-300 leading-6 mt-3 whitespace-pre-wrap break-words">${esc(m.caption)}</p>`:''}<div class="text-[10px] text-gray-600 mt-3">Added by ${m.from==='him'?'Him':'Her'}</div></div></div></article>`).join('');
+}
+function openMemoryModal(){const today=new Date().toISOString().slice(0,10);showModal('Add to our story',`<div class="space-y-3"><label class="block text-xs text-gray-400">Photo <span class="text-gray-600">(optional)</span></label><input id="memoryPhoto" type="file" accept="image/*" class="w-full rounded-2xl bg-black/20 border border-white/10 p-3 text-sm"><input id="memoryTitle" maxlength="80" class="w-full rounded-2xl bg-black/20 border border-white/10 p-3 outline-none" placeholder="What should we remember this as?"><textarea id="memoryCaption" maxlength="1000" rows="4" class="w-full rounded-2xl bg-black/20 border border-white/10 p-3 outline-none resize-none" placeholder="Tell the story behind this memory…"></textarea><input id="memoryDate" type="date" value="${today}" class="w-full rounded-2xl bg-black/20 border border-white/10 p-3 outline-none"><input id="memoryLocation" maxlength="100" class="w-full rounded-2xl bg-black/20 border border-white/10 p-3 outline-none" placeholder="📍 Where was it? (optional)"><div id="memoryProgress" class="hidden text-xs text-gray-400 text-center"></div><button id="memorySaveBtn" onclick="saveMemory()" class="w-full rounded-2xl bg-gradient-to-r from-pink-500 to-purple-500 py-3 font-bold">Add to our story ❤️</button></div>`)}
 async function prepareImage(file){if(!file)return null;if(!file.type.startsWith('image/'))throw new Error('Please choose an image file.');if(file.size>12*1024*1024)throw new Error('Please choose an image smaller than 12 MB.');try{const bitmap=await createImageBitmap(file);const max=1800,scale=Math.min(1,max/Math.max(bitmap.width,bitmap.height));const canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(bitmap.width*scale));canvas.height=Math.max(1,Math.round(bitmap.height*scale));const ctx=canvas.getContext('2d');ctx.drawImage(bitmap,0,0,canvas.width,canvas.height);return await new Promise(resolve=>canvas.toBlob(resolve,'image/jpeg',0.84));}catch(e){return file}}
-async function saveMemory(){const title=document.getElementById('memoryTitle').value.trim();const caption=document.getElementById('memoryCaption').value.trim();const date=document.getElementById('memoryDate').value;const location=document.getElementById('memoryLocation').value.trim();const file=document.getElementById('memoryPhoto').files[0];const btn=document.getElementById('memorySaveBtn');const progress=document.getElementById('memoryProgress');if(!title){alert('Give this memory a title ❤️');return;}const id=ref?ref.child('memories').push().key:String(now()+Math.random());const memory={id,title,caption,date:date||new Date().toISOString().slice(0,10),location,from:role,createdAt:now(),photoUrl:'',storagePath:''};try{btn.disabled=true;progress.classList.remove('hidden');progress.textContent=file?'Preparing photo…':'Saving memory…';if(file){if(!storageReady)throw new Error('Firebase Storage is not available. Enable Storage in your Firebase project, or save this memory without a photo.');con
+async function saveMemory(){const title=document.getElementById('memoryTitle').value.trim();const caption=document.getElementById('memoryCaption').value.trim();const date=document.getElementById('memoryDate').value;const location=document.getElementById('memoryLocation').value.trim();const file=document.getElementById('memoryPhoto').files[0];const btn=document.getElementById('memorySaveBtn');const progress=document.getElementById('memoryProgress');if(!title){alert('Give this memory a title ❤️');return;}const id=uid('memory');const memory={id,title,caption,date:date||new Date().toISOString().slice(0,10),location,from:role,createdAt:now(),photoUrl:'',storagePath:'',deletedAt:null};try{btn.disabled=true;progress.classList.remove('hidden');progress.textContent=file?'Preparing photo…':'Saving memory…';if(file){if(!storageReady)throw new Error('Firebase Storage is not available. You can still save a text-only memory.');const image=await prepareImage(file);const path=`between-us/memories/${id}.jpg`;progress.textContent='Uploading photo…';const task=storage.ref(path).put(image,{contentType:'image/jpeg'});await new Promise((resolve,reject)=>task.on('state_changed',snap=>{const pct=Math.round(snap.bytesTransferred/snap.totalBytes*100);progress.textContent=`Uploading photo… ${pct}%`},reject,resolve));memory.photoUrl=await storage.ref(path).getDownloadURL();memory.storagePath=path;}await writeRecord('memories',id,memory);state.memories[id]=memory;saveLocal();renderMemories();closeModal();burst('📸')}catch(e){console.error('Memory save failed:',e);alert(e.message||'Could not save this memory.');btn.disabled=false;progress.textContent='Could not save. Nothing was removed.'}}
+async function archiveMemory(id){const memory=state.memories[id];if(!memory||!confirm('Archive this memory? It will remain in the Firebase history and will not be permanently deleted.'))return;try{const deletedAt=now();await patchRecord('memories',id,{deletedAt});state.memories[id].deletedAt=deletedAt;saveLocal();renderMemories()}catch(e){alert('The memory was not archived because Firebase is not connected.')}}
+function showModal(title,body){document.getElementById('modalTitle').textContent=title;document.getElementById('modalBody').innerHTML=body;const m=document.getElementById('modal');m.classList.remove('hidden');m.classList.add('flex')}
+function closeModal(){const m=document.getElementById('modal');m.classList.add('hidden');m.classList.remove('flex')}
+function editCall(){const current=state.targetCall?new Date(state.targetCall).toISOString().slice(0,16):'';showModal('When are we talking?',`<input id="callInput" type="datetime-local" value="${current}" class="w-full rounded-2xl bg-black/20 border border-white/10 p-3 outline-none"><button onclick="saveCall()" class="w-full mt-3 rounded-2xl bg-gradient-to-r from-pink-500 to-purple-500 py-3 font-bold">Set countdown</button>`)}
+async function saveCall(){const v=document.getElementById('callInput').value;if(!v)return;const old=state.targetCall;state.targetCall=new Date(v).getTime();saveLocal();try{await remoteRootUpdate({targetCall:state.targetCall});closeModal();startCountdown()}catch(e){state.targetCall=old;saveLocal();alert('Countdown was not changed because Firebase is not connected.')}}
+function startCountdown(){clearInterval(countdownTimer);const tick=()=>{let d=state.targetCall?state.targetCall-now():0;if(d<0)d=0;const days=Math.floor(d/86400000),hours=Math.floor(d%86400000/3600000),mins=Math.floor(d%3600000/60000),secs=Math.floor(d%60000/1000);document.getElementById('countdown').innerHTML=[[days,'days'],[hours,'hours'],[mins,'min'],[secs,'sec']].map(x=>`<div class="rounded-2xl bg-white/5 p-3 text-center"><div class="text-2xl font-extrabold">${String(x[0]).padStart(2,'0')}</div><div class="text-[10px] uppercase tracking-widest text-gray-500 mt-1">${x[1]}</div></div>`).join('')};tick();countdownTimer=setInterval(tick,1000)}
+function initStart(){if(!state.targetCall){const d=new Date();const day=d.getDay();let add=(7-day)%7;const target=new Date(d);target.setDate(d.getDate()+add);target.setHours(20,0,0,0);if(target<=d)target.setDate(target.getDate()+7);state.targetCall=target.getTime()}if(!state.relationshipStart){state.relationshipStart=new Date().getTime()}saveLocal();document.getElementById('daysTogether').textContent=Math.max(1,Math.floor((now()-state.relationshipStart)/86400000));}
+function burst(symbol){for(let i=0;i<7;i++){const e=document.createElement('div');e.className='heartFloat';e.textContent=symbol;e.style.left=(20+Math.random()*60)+'vw';e.style.animationDelay=(Math.random()*.3)+'s';document.body.appendChild(e);setTimeout(()=>e.remove(),2100)}if(window.confetti)confetti({particleCount:35,spread:60,origin:{y:.75},colors:['#ff6fae','#a78bfa','#ffffff']})}
+function renderAll(){document.getElementById('roleText').textContent=role==='him'?'Him':'Her';renderPresence();renderMoods();renderTimeline();renderNotes();renderMemories();updateMissCounts();startCountdown();const sig=listActive(state.signals).sort((a,b)=>b.at-a.at)[0];document.getElementById('lastSignal').textContent=sig?`${sig.from==='him'?'Him':'Her'} · ${new Date(sig.at).toLocaleString([], {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}`:'Nothing yet'}
+try { renderAll(); } catch(e) { console.error('Initial UI render failed:',e); }
+
+if(firebaseReady && ref){
+  const connectedRef=db.ref('.info/connected');
+  connectedRef.on('value',snap=>{firebaseConnected=snap.val()===true;setLive(firebaseConnected,firebaseConnected?'Firebase connected':'Offline')},err=>{console.error('Firebase connection monitor failed:',err);setLive(false,'Connection check failed')});
+  ref.child('app_v3').once('value').then(async snap=>{
+    const v3=snap.val();
+    if(v3){Object.assign(state,v3);state.him=Object.assign({mood:null,moodAt:null,heartbeat:0},state.him||{});state.her=Object.assign({mood:null,moodAt:null,heartbeat:0},state.her||{});state.signals=toMap(state.signals);state.notes=toMap(state.notes);state.moments=toMap(state.moments);state.memories=toMap(state.memories);serverLoaded=true;saveLocal();renderAll();return}
+    // Safe one-time migration: READ legacy data, never delete or replace it.
+    const legacySnap=await ref.once('value');
+    const legacy=legacySnap.val()||{};
+    const migrated={
+      him:{mood:legacy.currentMood&&String(legacy.currentMood).includes('(Him)')?legacy.currentMood:null,moodAt:null,heartbeat:Number(legacy.himHeartbeat)||0},
+      her:{mood:legacy.currentMood&&String(legacy.currentMood).includes('(Her)')?legacy.currentMood:null,moodAt:null,heartbeat:Number(legacy.herHeartbeat)||0},
+      targetCall:legacy.targetCallDate?new Date(legacy.targetCallDate).getTime():null,
+      relationshipStart:null
+    };
+    const notes=normalizeList(legacy.notes);notes.forEach(n=>migrated.notes||(migrated.notes={}));
+    // Preserve legacy notes in the new branch as individual records.
+    const writes={};
+    if(legacy.notes){const ns=typeof legacy.notes==='string'?JSON.parse(legacy.notes):legacy.notes;normalizeList(ns).forEach(n=>{if(n&&n.id)writes[`notes/${n.id}`]=Object.assign({deletedAt:null,at:n.date?new Date(n.date).getTime():now()},n)})}
+    if(legacy.himMissCount||legacy.herMissCount){
+      // Counters are preserved as legacy snapshot metadata; future counts come from immutable signals.
+      writes.meta={legacyHimMissCount:Number(legacy.himMissCount)||0,legacyHerMissCount:Number(legacy.herMissCount)||0,migratedAt:now()};
+    }
+    const base={him:migrated.him,her:migrated.her,targetCall:migrated.targetCall,relationshipStart:migrated.relationshipStart};
+    await ref.child('app_v3').update(base);
+    if(Object.keys(writes).length) await ref.child('app_v3').update(writes);
+    Object.assign(state,base);serverLoaded=true;saveLocal();renderAll();
+  }).catch(err=>{console.error('Firebase initial read failed:',err);setLive(false,err&&err.code==='PERMISSION_DENIED'?'Firebase permission denied':'Firebase read failed')});
+  ref.child('app_v3').on('value',snap=>{const x=snap.val();if(!x)return;Object.assign(state,x);state.him=Object.assign({mood:null,moodAt:null,heartbeat:0},state.him||{});state.her=Object.assign({mood:null,moodAt:null,heartbeat:0},state.her||{});state.signals=toMap(state.signals);state.notes=toMap(state.notes);state.moments=toMap(state.moments);state.memories=toMap(state.memories);saveLocal();try{renderAll()}catch(e){console.error('UI refresh failed:',e)}},err=>{console.error('Firebase live read failed:',err);setLive(false,err&&err.code==='PERMISSION_DENIED'?'Firebase permission denied':'Firebase read failed')});
+  setTimeout(()=>{const b=document.getElementById('liveBadge');if(b&&/Connecting/.test(b.textContent))setLive(false,'Firebase timeout')},8000);
+}else setLive(false,'Firebase unavailable');
+
+try{initStart();renderAll()}catch(e){console.error('Startup UI error:',e)}
+function showModal(title,body){document.getElementById('modalTitle').textContent=title;document.getElementById('modalBody').innerHTML=body;const m=document.getElementById('modal');m.classList.remove('hidden');m.classList.add('flex')}
+function closeModal(){const m=document.getElementById('modal');m.classList.add('hidden');m.classList.remove('flex')}
+function editCall(){const current=state.targetCall?new Date(state.targetCall).toISOString().slice(0,16):'';showModal('When are we talking?',`<input id="callInput" type="datetime-local" value="${current}" class="w-full rounded-2xl bg-black/20 border border-white/10 p-3 outline-none"><button onclick="saveCall()" class="w-full mt-3 rounded-2xl bg-gradient-to-r from-pink-500 to-purple-500 py-3 font-bold">Set countdown</button>`)}
+function saveCall(){const v=document.getElementById('callInput').value;if(!v)return;state.targetCall=new Date(v).getTime();remoteUpdate({targetCall:state.targetCall});closeModal();startCountdown()}
+function startCountdown(){clearInterval(countdownTimer);const tick=()=>{let d=state.targetCall?state.targetCall-now():0;if(d<0)d=0;const days=Math.floor(d/86400000),hours=Math.floor(d%86400000/3600000),mins=Math.floor(d%3600000/60000),secs=Math.floor(d%60000/1000);document.getElementById('countdown').innerHTML=[[days,'days'],[hours,'hours'],[mins,'min'],[secs,'sec']].map(x=>`<div class="rounded-2xl bg-white/5 p-3 text-center"><div class="text-2xl font-extrabold">${String(x[0]).padStart(2,'0')}</div><div class="text-[10px] uppercase tracking-widest text-gray-500 mt-1">${x[1]}</div></div>`).join('')};tick();countdownTimer=setInterval(tick,1000)}
+function initStart(){if(!state.targetCall){const d=new Date();const day=d.getDay();let add=(7-day)%7;const target=new Date(d);target.setDate(d.getDate()+add);target.setHours(20,0,0,0);if(target<=d)target.setDate(target.getDate()+7);state.targetCall=target.getTime()}if(!state.relationshipStart){state.relationshipStart=new Date().getTime()}save();document.getElementById('daysTogether').textContent=Math.max(1,Math.floor((now()-state.relationshipStart)/86400000));}
+function burst(symbol){for(let i=0;i<7;i++){const e=document.createElement('div');e.className='heartFloat';e.textContent=symbol;e.style.left=(20+Math.random()*60)+'vw';e.style.animationDelay=(Math.random()*.3)+'s';document.body.appendChild(e);setTimeout(()=>e.remove(),2100)}if(window.confetti)confetti({particleCount:35,spread:60,origin:{y:.75},colors:['#ff6fae','#a78bfa','#ffffff']})}
+function renderAll(){document.getElementById('roleText').textContent=role==='him'?'Him':'Her';renderPresence();renderMoods();renderTimeline();renderNotes();renderMemories();updateMissCounts();startCountdown();document.getElementById('lastSignal').textContent=state.signals[0]?`${state.signals[0].from==='him'?'Him':'Her'} · ${new Date(state.signals[0].at).toLocaleString([], {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}`:'Nothing yet'}
+// Render local UI first. IMPORTANT: startup never writes local state to Firebase.
+try { renderAll(); } catch(e) { console.error('Initial UI render failed:',e); }
+
+if(firebaseReady && ref){
+  const connectedRef=db.ref('.info/connected');
+  connectedRef.on('value',snap=>{
+    firebaseConnected=snap.val()===true;
+    setLive(firebaseConnected,firebaseConnected?'Firebase connected':'Offline');
+  },err=>{
+    console.error('Firebase connection monitor failed:',err);
+    setLive(false,'Connection check failed');
+  });
+
+  ref.once('value').then(snap=>{
+    const x=snap.val();
+    if(x){
+      // Merge server data into the UI. Never push local state back during startup.
+      Object.assign(state,x);
+      state.him=Object.assign({mood:null,moodAt:null,heartbeat:0},state.him||{});
+      state.her=Object.assign({mood:null,moodAt:null,heartbeat:0},state.her||{});
+      state.signals=normalizeList(state.signals);
+      state.notes=normalizeList(state.notes);
+      state.moments=normalizeList(state.moments);
+      state.memories=normalizeList(state.memories);
+      save();
+    }
+    renderAll();
+  }).catch(err=>{
+    console.error('Firebase initial read failed:',err);
+    setLive(false,err && err.code==='PERMISSION_DENIED'?'Firebase permission denied':'Firebase read failed');
+  });
+
+  ref.on('value',snap=>{
+    const x=snap.val();
+    if(!x) return;
+    Object.assign(state,x);
+    state.him=Object.assign({mood:null,moodAt:null,heartbeat:0},state.him||{});
+    state.her=Object.assign({mood:null,moodAt:null,heartbeat:0},state.her||{});
+    state.signals=normalizeList(state.signals);
+    state.notes=normalizeList(state.notes);
+    state.moments=normalizeList(state.moments);
+    state.memories=normalizeList(state.memories);
+    save();
+    try { renderAll(); } catch(e) { console.error('UI refresh failed:',e); }
+  },err=>{
+    console.error('Firebase live read failed:',err);
+    setLive(false,err && err.code==='PERMISSION_DENIED'?'Firebase permission denied':'Firebase read failed');
+  });
+
+  setTimeout(()=>{
+    const b=document.getElementById('liveBadge');
+    if(b && /Connecting/.test(b.textContent)) setLive(false,'Firebase timeout');
+  },8000);
+}else{
+  setLive(false,'Firebase unavailable');
+}
+
+try { initStart(); renderAll(); } catch(e) { console.error('Startup UI error:',e); }
+heartbeat();setInterval(heartbeat,10000);setInterval(renderPresence,5000);window.addEventListener('beforeunload',()=>{});
+</script>
+</body>
+</html>
