@@ -13,6 +13,7 @@
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
 <style>
 :root{--bg:#0d0916;--card:rgba(255,255,255,.075);--border:rgba(255,255,255,.11);--pink:#ff6fae;--purple:#a78bfa;--text:#f8f5ff;--muted:#aaa1b8}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 10% 0%,#2b1638 0,transparent 32%),radial-gradient(circle at 90% 20%,#1c1640 0,transparent 28%),var(--bg);color:var(--text);font-family:'Plus Jakarta Sans',sans-serif;min-height:100vh}
@@ -71,6 +72,11 @@ button,input,textarea{font:inherit}button{cursor:pointer}.glass{background:var(-
 </section>
 
 <section class="glass rounded-[28px] p-5 mb-4 fade">
+  <div class="flex justify-between items-center gap-3"><div><p class="text-xs text-pink-200/70 uppercase tracking-[.22em]">our memories</p><h2 class="text-xl font-bold mt-1">Our Storybook 📸</h2><p class="text-xs text-gray-500 mt-1">Photos, little stories, and the days you never want to forget.</p></div><button onclick="openMemoryModal()" class="shrink-0 rounded-xl bg-gradient-to-r from-pink-500/90 to-purple-500/90 px-3 py-2 text-xs font-semibold">+ Memory</button></div>
+  <div id="memories" class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
+</section>
+
+<section class="glass rounded-[28px] p-5 mb-4 fade">
   <div class="flex justify-between items-center"><div><p class="text-xs text-purple-200/70 uppercase tracking-[.22em]">notes</p><h2 class="text-xl font-bold mt-1">For you, from me</h2></div><button onclick="openNoteModal()" class="rounded-xl bg-white/10 px-3 py-2 text-xs">+ Note</button></div>
   <div id="notes" class="mt-4 space-y-3"></div>
 </section>
@@ -92,13 +98,14 @@ button,input,textarea{font:inherit}button{cursor:pointer}.glass{background:var(-
 </div>
 
 <script>
-const firebaseConfig={databaseURL:'https://between-us-8fb06-default-rtdb.firebaseio.com/'};
-let db=null, ref=null, firebaseReady=false;
+const firebaseConfig={databaseURL:'https://between-us-8fb06-default-rtdb.firebaseio.com/',storageBucket:'between-us-8fb06.firebasestorage.app'};
+let db=null, ref=null, storage=null, firebaseReady=false, storageReady=false;
 try{
   if(!window.firebase) throw new Error('Firebase SDK did not load. Check your internet connection or hosting CSP.');
   firebase.initializeApp(firebaseConfig);
   db=firebase.database();
   ref=db.ref('space_data');
+  try { storage=firebase.storage(); storageReady=true; } catch(storageError) { console.warn('Firebase Storage unavailable:',storageError); }
   firebaseReady=true;
 }catch(e){
   console.error('Firebase initialization failed:',e);
@@ -149,47 +156,10 @@ function renderNotes(){const notes=[...state.notes].sort((a,b)=>b.at-a.at);docum
 function openNoteModal(){showModal('Leave a note',`<textarea id="modalInput" rows="5" maxlength="1000" class="w-full rounded-2xl bg-black/20 border border-white/10 p-3 outline-none" placeholder="Write something only the two of you need to know…"></textarea><button onclick="saveNote()" class="w-full mt-3 rounded-2xl bg-gradient-to-r from-pink-500 to-purple-500 py-3 font-bold">Save note</button>`)}
 function saveNote(){const text=document.getElementById('modalInput').value.trim();if(!text)return;state.notes.push({id:crypto.randomUUID?crypto.randomUUID():String(now()),text,from:role,at:now()});remoteUpdate({notes:state.notes});renderNotes();closeModal();burst('💌')}
 function deleteNote(id){state.notes=state.notes.filter(n=>n.id!==id);remoteUpdate({notes:state.notes});renderNotes()}
-function openMomentModal(){showModal('Add a memory',`<input id="momentTitle" maxlength="80" class="w-full rounded-2xl bg-black/20 border border-white/10 p-3 outline-none" placeholder="e.g. Our first trip together"><input id="momentDate" type="date" class="w-full mt-3 rounded-2xl bg-black/20 border border-white/10 p-3 outline-none"><button onclick="saveMoment()" class="w-full mt-3 rounded-2xl bg-gradient-to-r from-pink-500 to-purple-500 py-3 font-bold">Add memory</button>`)}
-function saveMoment(){const title=document.getElementById('momentTitle').value.trim();if(!title)return;state.moments.unshift({id:String(now()),title,date:document.getElementById('momentDate').value||new Date().toISOString().slice(0,10)});remoteUpdate({moments:state.moments});closeModal();burst('✨')}
-function showModal(title,body){document.getElementById('modalTitle').textContent=title;document.getElementById('modalBody').innerHTML=body;const m=document.getElementById('modal');m.classList.remove('hidden');m.classList.add('flex')}
-function closeModal(){const m=document.getElementById('modal');m.classList.add('hidden');m.classList.remove('flex')}
-function editCall(){const current=state.targetCall?new Date(state.targetCall).toISOString().slice(0,16):'';showModal('When are we talking?',`<input id="callInput" type="datetime-local" value="${current}" class="w-full rounded-2xl bg-black/20 border border-white/10 p-3 outline-none"><button onclick="saveCall()" class="w-full mt-3 rounded-2xl bg-gradient-to-r from-pink-500 to-purple-500 py-3 font-bold">Set countdown</button>`)}
-function saveCall(){const v=document.getElementById('callInput').value;if(!v)return;state.targetCall=new Date(v).getTime();remoteUpdate({targetCall:state.targetCall});closeModal();startCountdown()}
-function startCountdown(){clearInterval(countdownTimer);const tick=()=>{let d=state.targetCall?state.targetCall-now():0;if(d<0)d=0;const days=Math.floor(d/86400000),hours=Math.floor(d%86400000/3600000),mins=Math.floor(d%3600000/60000),secs=Math.floor(d%60000/1000);document.getElementById('countdown').innerHTML=[[days,'days'],[hours,'hours'],[mins,'min'],[secs,'sec']].map(x=>`<div class="rounded-2xl bg-white/5 p-3 text-center"><div class="text-2xl font-extrabold">${String(x[0]).padStart(2,'0')}</div><div class="text-[10px] uppercase tracking-widest text-gray-500 mt-1">${x[1]}</div></div>`).join('')};tick();countdownTimer=setInterval(tick,1000)}
-function initStart(){if(!state.targetCall){const d=new Date();const day=d.getDay();let add=(7-day)%7;const target=new Date(d);target.setDate(d.getDate()+add);target.setHours(20,0,0,0);if(target<=d)target.setDate(target.getDate()+7);state.targetCall=target.getTime()}if(!state.relationshipStart){state.relationshipStart=new Date().getTime()}save();document.getElementById('daysTogether').textContent=Math.max(1,Math.floor((now()-state.relationshipStart)/86400000));}
-function burst(symbol){for(let i=0;i<7;i++){const e=document.createElement('div');e.className='heartFloat';e.textContent=symbol;e.style.left=(20+Math.random()*60)+'vw';e.style.animationDelay=(Math.random()*.3)+'s';document.body.appendChild(e);setTimeout(()=>e.remove(),2100)}if(window.confetti)confetti({particleCount:35,spread:60,origin:{y:.75},colors:['#ff6fae','#a78bfa','#ffffff']})}
-function renderAll(){document.getElementById('roleText').textContent=role==='him'?'Him':'Her';renderPresence();renderMoods();renderTimeline();renderNotes();updateMissCounts();startCountdown();document.getElementById('lastSignal').textContent=state.signals[0]?`${state.signals[0].from==='him'?'Him':'Her'} · ${new Date(state.signals[0].at).toLocaleString([], {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}`:'Nothing yet'}
-if(firebaseReady && ref){
-  const connectedRef=db.ref('.info/connected');
-  connectedRef.on('value',snap=>{
-    if(snap.val()===true) setLive(true,'Firebase connected');
-    else setLive(false,'Offline');
-  });
-  ref.on('value',snap=>{
-    const x=snap.val();
-    if(x){
-      Object.assign(state,x);
-      state.him=Object.assign({},state.him||{});
-      state.her=Object.assign({},state.her||{});
-      state.signals=Array.isArray(state.signals)?state.signals:[];
-      state.notes=Array.isArray(state.notes)?state.notes:[];
-      state.moments=Array.isArray(state.moments)?state.moments:[];
-    }
-    save(); setLive(true,'Firebase connected'); renderAll();
-  },err=>{
-    console.error('Firebase read failed:',err);
-    setLive(false,err && err.code==='PERMISSION_DENIED'?'Firebase permission denied':'Firebase read failed');
-  });
-  // Give a clear result even if the listener never receives a response.
-  setTimeout(()=>{
-    const b=document.getElementById('liveBadge');
-    if(b && b.textContent==='Connecting…') setLive(false,'Firebase timeout');
-  },8000);
-}else{
-  setLive(false,'Firebase unavailable');
-}
-
-initStart();renderAll();heartbeat();setInterval(heartbeat,10000);setInterval(renderPresence,5000);window.addEventListener('beforeunload',()=>{});
-</script>
-</body>
-</html>
+function openMomentModal(){showModal('Add a moment',`<input id="momentTitle" maxlength="80" class="w-full rounded-2xl bg-black/20 border border-white/10 p-3 outline-none" placeholder="e.g. She sent me a random voice note"><input id="momentDate" type="date" class="w-full mt-3 rounded-2xl bg-black/20 border border-white/10 p-3 outline-none"><button onclick="saveMoment()" class="w-full mt-3 rounded-2xl bg-gradient-to-r from-pink-500 to-purple-500 py-3 font-bold">Add moment</button>`)}
+function saveMoment(){const title=document.getElementById('momentTitle').value.trim();if(!title)return;state.moments.unshift({id:String(now()),title,date:document.getElementById('momentDate').value||new Date().toISOString().slice(0,10),from:role});remoteUpdate({moments:state.moments});closeModal();burst('✨')}
+function normalizeList(value){if(!value)return [];return Array.isArray(value)?value:Object.entries(value).map(([id,v])=>Object.assign({id},v||{}))}
+function renderMemories(){const memories=[...state.memories].sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')) || (b.createdAt||0)-(a.createdAt||0));const el=document.getElementById('memories');if(!memories.length){el.innerHTML='<div class="col-span-full text-sm text-gray-500 text-center py-5">Your favorite photos and stories will live here. ❤️</div>';return;}el.innerHTML=memories.map(m=>`<article class="overflow-hidden rounded-2xl bg-white/5 border border-white/5"><div class="relative aspect-[4/3] bg-black/20">${m.photoUrl?`<img src="${esc(m.photoUrl)}" alt="${esc(m.title)}" class="w-full h-full object-cover" loading="lazy">`:'<div class="w-full h-full flex items-center justify-center text-5xl">💞</div>'}</div><div class="p-4"><div class="flex items-start justify-between gap-3"><div class="min-w-0"><h3 class="font-bold truncate">${esc(m.title)}</h3><div class="text-[11px] text-gray-500 mt-1">${m.date?new Date(m.date+'T12:00:00').toLocaleDateString([], {day:'numeric',month:'long',year:'numeric'}):''}${m.location?` · ${esc(m.location)}`:''}</div></div><button onclick="deleteMemory('${esc(m.id)}')" class="text-[11px] text-gray-600 hover:text-red-300">Delete</button></div>${m.caption?`<p class="text-sm text-gray-300 leading-6 mt-3 whitespace-pre-wrap break-words">${esc(m.caption)}</p>`:''}<div class="text-[10px] text-gray-600 mt-3">Added by ${m.from==='him'?'Him':'Her'}</div></div></article>`).join('')}
+function openMemoryModal(){const today=new Date().toISOString().slice(0,10);showModal('Add a memory',`<div class="space-y-3"><label class="block text-xs text-gray-400">Photo <span class="text-gray-600">(optional)</span></label><input id="memoryPhoto" type="file" accept="image/*" class="w-full rounded-2xl bg-black/20 border border-white/10 p-3 text-sm"><input id="memoryTitle" maxlength="80" class="w-full rounded-2xl bg-black/20 border border-white/10 p-3 outline-none" placeholder="Memory title"><textarea id="memoryCaption" maxlength="1000" rows="4" class="w-full rounded-2xl bg-black/20 border border-white/10 p-3 outline-none resize-none" placeholder="What happened? Tell your future selves the story…"></textarea><input id="memoryDate" type="date" value="${today}" class="w-full rounded-2xl bg-black/20 border border-white/10 p-3 outline-none"><input id="memoryLocation" maxlength="100" class="w-full rounded-2xl bg-black/20 border border-white/10 p-3 outline-none" placeholder="Location (optional)"><div id="memoryProgress" class="hidden text-xs text-gray-400 text-center"></div><button id="memorySaveBtn" onclick="saveMemory()" class="w-full rounded-2xl bg-gradient-to-r from-pink-500 to-purple-500 py-3 font-bold">Save memory ❤️</button></div>`)}
+async function prepareImage(file){if(!file)return null;if(!file.type.startsWith('image/'))throw new Error('Please choose an image file.');if(file.size>12*1024*1024)throw new Error('Please choose an image smaller than 12 MB.');try{const bitmap=await createImageBitmap(file);const max=1800,scale=Math.min(1,max/Math.max(bitmap.width,bitmap.height));const canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(bitmap.width*scale));canvas.height=Math.max(1,Math.round(bitmap.height*scale));const ctx=canvas.getContext('2d');ctx.drawImage(bitmap,0,0,canvas.width,canvas.height);return await new Promise(resolve=>canvas.toBlob(resolve,'image/jpeg',0.84));}catch(e){return file}}
+async function saveMemory(){const title=document.getElementById('memoryTitle').value.trim();const caption=document.getElementById('memoryCaption').value.trim();const date=document.getElementById('memoryDate').value;const location=document.getElementById('memoryLocation').value.trim();const file=document.getElementById('memoryPhoto').files[0];const btn=document.getElementById('memorySaveBtn');const progress=document.getElementById('memoryProgress');if(!title){alert('Give this memory a title ❤️');return;}const id=ref?ref.child('memories').push().key:String(now()+Math.random());const memory={id,title,caption,date:date||new Date().toISOString().slice(0,10),location,from:role,createdAt:now(),photoUrl:'',storagePath:''};try{btn.disabled=true;progress.classList.remove('hidden');progress.textContent=file?'Preparing photo…':'Saving memory…';if(file){if(!storageReady)throw new Error('Firebase Storage is not available. Enable Storage in your Firebase project, or save this memory without a photo.');con
